@@ -1,0 +1,6 @@
+# Configurations in this file are only for development purposes. Would recommend to be added in .gitignore
+it.unibz.ml.knimeVis: # {group_id}.{name} from the knime.yml
+  src: /home/tb/Documents/UNIBZ_research/knime/KnimeVis_ext # Local path to folder containing the extension files
+#  conda_env_path: C:\knime_5.3.2\bundling\envs\org_knime_pythonscripting # Path to the local installed Python environment to use
+  conda_env_path: /home/tb/miniconda3/envs/my_python_env
+  debug_mode: true # Optional line, if set to true, it will always use the latest changes of execute/configure, when that method is used within the KNIME Analytics Platform
