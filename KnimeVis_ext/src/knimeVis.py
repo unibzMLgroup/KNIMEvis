@@ -10,5 +10,5 @@ main_category = knext.category(
 )
 
 
-#from knimeVisNodes import imageProcessing, imageProcessing2
-from knimeVisNodes import imageLoader
+#from knimeVisNodes import imageProcessing, imageProcessing2 
+from knimeVisNodes import imageLoader,spatialFiltering
