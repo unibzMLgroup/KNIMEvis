@@ -20,11 +20,11 @@ knimeVis_category = knext.category(
 
 # Node definition
 @knext.node(
-    name="Spatial Filtering",
+    name="Denoising",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/filterIcon.png",
+    icon_path="icons/denoise.png",
     category=knimeVis_category,
-    id="filtering-image",
+    id="denoise-image",
 )
 @knext.output_table(
     name="Image Data",
