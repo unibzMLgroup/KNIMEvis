@@ -114,9 +114,9 @@ class Denoising:
         return knext.Table.from_pandas(df)
     
     # HACK to work with PIL
-    def median_filter(data, filter_size):
+    def median_filter(self,data, filter_size):
         temp = []
-        data = np.array(data, dtype=np.float32)
+        data = np.array(data.convert("L"),dtype=np.uint8)
         indexer = filter_size // 2
         data_final = []
         data_final = np.zeros((len(data),len(data[0])))
@@ -134,9 +134,11 @@ class Denoising:
                         else:
                             for k in range(filter_size):
                                 temp.append(data[i + z - indexer][j + k - indexer])
-
+                
                 temp.sort()
                 data_final[i][j] = temp[len(temp) // 2]
                 temp = []
-        return Image.fromarray(data_final)
+        # HACK to produce images, correct if the case
+        new_img = np.clip(data_final, 0, 255).astype(np.uint8)
+        return Image.fromarray(new_img)
     
