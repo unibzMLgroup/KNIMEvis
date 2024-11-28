@@ -56,7 +56,7 @@ class SpatialFiltering:
         LAPLACE = ("Laplace", "Description..")
         ROBERT = ("Robert", "Description..")
 
-
+    # TODO add parameter depending on the selected algorithm
     algorithm_selection_param = knext.EnumParameter(
         label="Spatial Filtering Algorithm Selection",
         description="Select the algorithm to produce spatial filtering",
