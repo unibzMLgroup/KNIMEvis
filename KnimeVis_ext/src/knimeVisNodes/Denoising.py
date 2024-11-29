@@ -40,7 +40,7 @@ class Denoising:
     """
     Denoising
 
-    The Denoising Node is a custom KNIME node designed for performing denoising on images.
+    This node reduces noise in images by applying advanced filtering techniques, enhancing image clarity and quality for downstream analysis.
     """
 
     # define your parameter
@@ -52,18 +52,18 @@ class Denoising:
     )
 
     class AlgorithmOptions(knext.EnumParameterOptions):
-        MEDIAN = ("Median Filtering", "Description..")
+        MEDIAN = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
 
 
     algorithm_selection_param = knext.EnumParameter(
         label="Denoising Algorithm Selection",
-        description="Select the algorithm to produce Denoised Immages",
+        description="Choose the algorithm to apply for reducing noise and producing clearer, denoised images.",
         default_value=AlgorithmOptions.MEDIAN.name,
         enum=AlgorithmOptions)
     
     filter_size =  knext.IntParameter(
         label="Filter size",
-        description="Value between 0 to 9 to toggle size of filter box used for filtering",
+        description="Specify an odd value to define the size of the filter box used for image denoising.",
         default_value=3,
         min_value=3,
         max_value=15,

@@ -28,7 +28,7 @@ knimeVis_category = knext.category(
 )
 @knext.output_table(
     name="Image Data",
-    description="Table containing image matrix as a NumPy array.",
+    description="Table containing image in PIL Image format.",
 )
 
 @knext.input_table(
@@ -40,7 +40,7 @@ class ImageReader:
     """
     Image Reader Node
 
-    This node loads an image from the specified file path and returns it as a NumPy array.
+    This node loads an image from the specified file path and returns it as a PIL Image.
     """
     # define your parameter
     image_path_column = knext.ColumnParameter(
