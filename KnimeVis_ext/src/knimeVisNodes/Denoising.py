@@ -53,6 +53,7 @@ class Denoising:
 
     class AlgorithmOptions(knext.EnumParameterOptions):
         MEDIAN = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
+        MEDIAN_openCV = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
 
 
     algorithm_selection_param = knext.EnumParameter(
@@ -108,6 +109,10 @@ class Denoising:
         if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
             # Execute logic for Algorithm1
             df["Denoising"] = [self.median_filter(i,self.filter_size)for i in images ]
+
+        elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
+            # Execute logic for Algorithm1
+            df["Denoising"] = [self.median_filter_opencv(i,self.filter_size)for i in images ]
         else:
             raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
             
@@ -141,4 +146,13 @@ class Denoising:
         # HACK to produce images, correct if the case
         new_img = np.clip(data_final, 0, 255).astype(np.uint8)
         return Image.fromarray(new_img)
+    
+    def median_filter_opencv(self, image, filter_size):
+        # HACK to work with PIL
+        # Convert image to NumPy array
+        data = np.array(image.convert("L"), dtype=np.uint8)
+        # Apply OpenCV median filter
+        denoised = cv.medianBlur(data, filter_size)
+        # Convert back to PIL image
+        return Image.fromarray(denoised)
     
