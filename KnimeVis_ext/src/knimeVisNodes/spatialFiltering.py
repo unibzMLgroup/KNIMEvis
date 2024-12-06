@@ -53,6 +53,7 @@ class SpatialFiltering:
 
     class AlgorithmOptions(knext.EnumParameterOptions):
         SOBEL = ("Sobel", "Description..")
+        SOBEL_OpenCV = ("SOBEL_OpenCV","SOBEL_OpenCV")
         LAPLACE = ("Laplace", "Description..")
         ROBERT = ("Robert", "Description..")
 
@@ -106,6 +107,9 @@ class SpatialFiltering:
         elif self.algorithm_selection_param == self.AlgorithmOptions.SOBEL.name:
             # Execute logic for Algorithm2
             df["Filtering"] = [self.sobel(i) for i in images]
+        elif self.algorithm_selection_param == self.AlgorithmOptions.SOBEL_OpenCV.name:
+            # Execute logic for Algorithm2
+            df["Filtering"] = [self.sobel_opencv(i) for i in images]
         elif self.algorithm_selection_param == self.AlgorithmOptions.LAPLACE.name:
             # Execute logic for Algorithm3
             df["Filtering"] = [self.laplace(i) for i in images]
@@ -158,4 +162,52 @@ class SpatialFiltering:
                 new_image[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * L_sunnzi))
         new_img = np.clip(new_img, 0, 255).astype(np.uint8)
         return Image.fromarray(new_img)
+
+
+
+    def sobel_opencv(self, image):
+        # Convert image to grayscale
+        gray_image = np.array(image.convert("L"), dtype=np.uint8)
+
+        # Apply Gaussian blur to reduce noise (optional but recommended)
+        blurred_image = cv.GaussianBlur(gray_image, (5, 5), 0)
+
+        # Apply Sobel filter in both X and Y directions
+        sobel_x = cv.Sobel(blurred_image, cv.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv.Sobel(blurred_image, cv.CV_64F, 0, 1, ksize=3)
+
+        # Calculate gradient magnitude (sqrt(sobel_x^2 + sobel_y^2))
+        gradient_magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
+        
+        # Normalize to 8-bit image
+        gradient_magnitude = np.clip(gradient_magnitude / np.max(gradient_magnitude) * 255, 0, 255).astype(np.uint8)
+
+        # Apply thresholding to keep only significant edges (adjust threshold as needed)
+        _, thresholded_image = cv.threshold(gradient_magnitude, 50, 255, cv.THRESH_BINARY)
+
+        # Convert back to an image
+        return Image.fromarray(thresholded_image)
     
+        # images = df[self.image_column]
+
+        # # Helper function to process each image
+        # def process_image(image):
+        #     try:
+        #         if isinstance(image, Image.Image):
+        #             return self.sobel_edge_detection(image)
+        #         else:
+        #             image = Image.open(image)
+        #             return self.sobel_edge_detection(image)
+        #     except Exception as e:
+        #         LOGGER.error(f"Error processing image: {e}")
+        #         return None
+
+        # # Parallel processing of images
+        # with ThreadPoolExecutor(max_workers=16) as executor:
+        #     df["Edge Detected Image"] = list(executor.map(process_image, images))
+
+        # # Stop timing
+        # end_time = time.time()
+        # elapsed_time = end_time - start_time
+        # LOGGER.info(f"Node execution completed in {elapsed_time:.2f} seconds.")
+
