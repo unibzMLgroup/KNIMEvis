@@ -32,10 +32,17 @@ Create a conda/Python environment containing the [knime-python-base metapackage]
     conda env create -f env.yml
 ```
 
+4. **Modify the config.yml file**
 
-Modify the `config.yml` file sutch that the absolute path correspond to poin to the src directory and the conda envirioment just created
+Update the following fields in the config.yml file:
 
-In knime dir find the `knimi.ini` file, in the Knime directory and add a line at the end of the file
+- Set the absolute path to point to the src directory of this repository.
+- Set the path to the Conda environment you just created.
+
+5. **Update the knime.ini file**
+
+- Locate the knime.ini file in the KNIME installation directory.
+- Add the following line to the end of the file:
 
 ```-Dknime.python.extension.config=path/to/config/config.yml```
 
