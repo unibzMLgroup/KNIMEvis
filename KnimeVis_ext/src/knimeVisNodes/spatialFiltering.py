@@ -3,6 +3,7 @@ import numpy as np
 import logging
 import cv2 as cv
 from utils import knutills as kutil
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image 
 import os
 
@@ -49,6 +50,14 @@ class SpatialFiltering:
         description="Select the column to apply spatial filtering.",
         port_index=0,
         column_filter=kutil.is_png
+    )
+
+    threshold =  knext.IntParameter(
+        label="threshold",
+        description="...",
+        default_value=30,
+        min_value=3,
+        max_value=150,
     )
 
     class AlgorithmOptions(knext.EnumParameterOptions):
@@ -99,25 +108,32 @@ class SpatialFiltering:
 
         df = input_table.to_pandas()
         images = df[self.image_column]
-        # selected_algorithm = execute_context.node.get_value("algorithm_selection_param")
 
-        if self.algorithm_selection_param == self.AlgorithmOptions.ROBERT.name:
-            # Execute logic for Algorithm1
-            df["Filtering"] = [self.robert(i)for i in images ]
-        elif self.algorithm_selection_param == self.AlgorithmOptions.SOBEL.name:
-            # Execute logic for Algorithm2
-            df["Filtering"] = [self.sobel(i) for i in images]
-        elif self.algorithm_selection_param == self.AlgorithmOptions.SOBEL_OpenCV.name:
-            # Execute logic for Algorithm2
-            df["Filtering"] = [self.sobel_opencv(i) for i in images]
-        elif self.algorithm_selection_param == self.AlgorithmOptions.LAPLACE.name:
-            # Execute logic for Algorithm3
-            df["Filtering"] = [self.laplace(i) for i in images]
-        else:
-            raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
-            
+        # Parallel processing of images
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            df["EdgeDetectedImage"] = list(executor.map(self.process_image, images))
+  
         return knext.Table.from_pandas(df)
     
+
+
+    def process_image(self,image):
+        try:
+            if self.algorithm_selection_param == self.AlgorithmOptions.ROBERT.name:
+                return self.robert(image)
+            elif self.algorithm_selection_param == self.AlgorithmOptions.SOBEL.name:
+                return self.sobel(image)
+            elif self.algorithm_selection_param == self.AlgorithmOptions.SOBEL_OpenCV.name:
+                return self.sobel_opencv(image)
+            elif self.algorithm_selection_param == self.AlgorithmOptions.LAPLACE.name:
+                return self.laplace(image)
+            else:
+                raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
+        except Exception as e:
+            LOGGER.error(f"Error processing image: {e}")
+            return None
+            
+
     # HACK to work with PIL
     def robert(self,img):
         img = np.array(img.convert("L"), dtype=np.float32)
@@ -130,7 +146,7 @@ class SpatialFiltering:
                     imgChild = img[x:x+2, y:y+2]
                     list_robert = r_sunnzi*imgChild
                     new_img[x, y] = abs(list_robert.sum()) # sum and absolute value
-        new_img = np.clip(new_img, 0, 255).astype(np.uint8)
+        new_img = np.clip(new_img, np.min(new_img), self.threshold).astype(np.uint8)
         return Image.fromarray(new_img)
                     
     # # The implementation of sobel operator
@@ -148,7 +164,7 @@ class SpatialFiltering:
                 new_imageY[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * s_suanziY))
                 new_image[i+1, j+1] = (new_imageX[i+1, j+1]*new_imageX[i+1,j+1] + new_imageY[i+1, j+1]*new_imageY[i+1,j+1])**0.5
 
-        new_img = np.clip(new_img, 0, 255).astype(np.uint8)
+        new_img = np.clip(new_img, np.min(new_img), self.threshold).astype(np.uint8)
         return Image.fromarray(new_img)
     
     # Laplace operator
@@ -160,7 +176,7 @@ class SpatialFiltering:
         for i in range(r-2):
             for j in range(c-2):
                 new_image[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * L_sunnzi))
-        new_img = np.clip(new_img, 0, 255).astype(np.uint8)
+        new_img = np.clip(new_img, np.min(new_img), self.threshold).astype(np.uint8)
         return Image.fromarray(new_img)
 
 
@@ -183,6 +199,7 @@ class SpatialFiltering:
         gradient_magnitude = np.clip(gradient_magnitude / np.max(gradient_magnitude) * 255, 0, 255).astype(np.uint8)
 
         # Apply thresholding to keep only significant edges (adjust threshold as needed)
+        # TODO check thresholding for opencv
         _, thresholded_image = cv.threshold(gradient_magnitude, 50, 255, cv.THRESH_BINARY)
 
         # Convert back to an image
