@@ -3,23 +3,48 @@
 ![alt text](LogoProject.png)
 
 ## Description
-This repository serves as the official [UNIBZ](www.unibz.it) project for creating custom KNIME nodes dedicated to image processing using Python. The repository aims to provide a seamless integration between KNIME's workflow analytics platform and the powerful capabilities of Python for image analysis and processing tasks.
+This repository serves as the official [UNIBZ](www.unibz.it) project for creating custom KNIME nodes dedicated to image processing using Python. The goal is to provide seamless integration between KNIME's workflow analytics platform and Python's advanced capabilities for image analysis and processing.
 
 With this project, users can:
 
-    Develop custom KNIME nodes tailored for specific image processing requirements.
-    Leverage Python libraries and tools for advanced image manipulation and analysis.
-    Simplify workflows by combining KNIME's no-code/low-code environment with Python's scripting flexibility.
+- Develop custom KNIME nodes tailored to specific image processing requirements.
+- Leverage Python libraries and tools for advanced image manipulation and analysis.
+- Simplify workflows by combining KNIME's no-code/low-code environment with Python's scripting flexibility.
 
 
 ## Installation
-step1 --> config.yml set the path for src and conda envirioment
-step2 --> in knime dir find the knimi.ini file and add a line at the end of the file
-`-Dknime.python.extension.config=path/to/config/config.yml`
+
+To start developing KNIME nodes with Python, follow these steps:
+1. **Clone this repository**:
+    ```bash
+    git clone ...
+    ```
+
+2. **Install the KNIME Analytics Platform**
+    Install [KNIME Analytics Platform](https://docs.knime.com/2024-12/analytics_platform_installation_guide/index.html#_installing_knime_analytics_platform) version 4.6.0 or higher.
+    Make sure to also install the KNIME Python Extension Development (Labs).
+
+3. **Set up a Conda/Python environment**
+Create a conda/Python environment containing the [knime-python-base metapackage](https://anaconda.org/knime/knime-python-base), together with the node development API [knime-extension]https://anaconda.org/knime/knime-extension for the KNIME Analytics Platform you are using
+
+```bash
+    cd KnimeVisLab
+    conda env create -f env.yml
+```
+
+
+Modify the `config.yml` file sutch that the absolute path correspond to poin to the src directory and the conda envirioment just created
+
+In knime dir find the `knimi.ini` file, in the Knime directory and add a line at the end of the file
+```-Dknime.python.extension.config=path/to/config/config.yml```
 
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Once you have completed the installation, you can begin developing and using custom KNIME nodes for image processing. To integrate your Python-based node into KNIME, follow these steps:
+
+1. Create your custom node in Python.
+2. Integrate the node into your KNIME workflow by using the custom node created in the previous step.
+3. Execute the workflow, and the image processing will be handled by Python scripts through KNIME's interface.
 
 ## Support
 Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
@@ -28,11 +53,14 @@ Tell people where they can go to for help. It can be any combination of an issue
 If you have ideas for releases in the future, it is a good idea to list them in the README.
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+We welcome contributions to this project! To contribute:
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- Fork this repository.
+- Create a new branch.
+- Make your changes and commit them.
+- Submit a pull request.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Please make sure your code follows the existing style and includes appropriate tests.
 
 ## Authors and acknowledgment
 Show your appreciation to those who have contributed to the project.
