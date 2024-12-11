@@ -90,7 +90,10 @@ class DenoisingNewV2:
 
         # Return the updated schema
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "Denoised Image")]  # Add a column for denoised images
+            [
+                knext.Column(knext.logical(Image.Image), "Denoised Image"),  # Denoised image column
+                knext.Column(knext.string(), "Algorithm Used"),             # Algorithm used column
+            ]
         )
 
         return output_schema
@@ -124,6 +127,9 @@ class DenoisingNewV2:
         # Parallel processing of images
         with ThreadPoolExecutor(max_workers=16) as executor:
             df["Denoised Image"] = list(executor.map(process_image, images))
+
+        # Add the selected algorithm to the table
+        df["Algorithm Used"] = self.algorithm_selection_param
 
         # Stop timing
         end_time = time.time()
