@@ -54,7 +54,14 @@ class Denoising:
     class AlgorithmOptions(knext.EnumParameterOptions):
         MEDIAN = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
         MEDIAN_openCV = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
+        GAUSSIAN_openCV = ("Gaussian Filtering", "Applies a Gaussian filter to reduce noise.")
 
+    algorithm_selection_param = knext.EnumParameter(
+        label="Denoising Algorithm Selection",
+        description="Select the algorithm to produce denoised images.",
+        default_value=AlgorithmOptions.MEDIAN.name,
+        enum=AlgorithmOptions
+    )
 
     algorithm_selection_param = knext.EnumParameter(
         label="Denoising Algorithm Selection",
@@ -113,6 +120,9 @@ class Denoising:
         elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
             # Execute logic for Algorithm1
             df["Denoising"] = [self.median_filter_opencv(i,self.filter_size)for i in images ]
+        elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
+            # Execute logic for Algorithm1
+            df["Denoising"] = [self.gaussian_filter_opencv(i,self.filter_size)for i in images ]
         else:
             raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
             
@@ -155,4 +165,13 @@ class Denoising:
         denoised = cv.medianBlur(data, filter_size)
         # Convert back to PIL image
         return Image.fromarray(denoised)
+    
+    def gaussian_filter_opencv(self, image, filter_size):
+        # Convert image to NumPy array
+        data = np.array(image.convert("L"), dtype=np.uint8)
+        # Apply Gaussian blur filter
+        denoised = cv.GaussianBlur(data, (filter_size, filter_size), 0)
+        # Convert back to PIL image
+        return Image.fromarray(denoised)
+
     
