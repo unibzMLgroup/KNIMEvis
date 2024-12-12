@@ -19,7 +19,6 @@ knimeVis_category = knext.category(
     icon="icons/knimeVisLab32.png",
 )
 
-
 # Define the New node to detect edges of the images 
 @knext.node(
     name="Canny Edge Detection",
