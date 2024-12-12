@@ -23,7 +23,7 @@ knimeVis_category = knext.category(
 @knext.node(
     name="Histogram Visualizer",
     node_type=knext.NodeType.VISUALIZER,
-    icon_path="icons/icon.png",
+    icon_path="icons/visualizations.png",
     category=knimeVis_category,
     id = "visual-image"
 )
@@ -52,15 +52,21 @@ class VisualizerNode:
 
     def configure(self, config_context, input_table_schema):
         
+        string_columns = [(c.name, c.ktype) for c in input_table_schema if kutil.is_string(c)]
+
+        if not string_columns:
+            raise ValueError("String column does not exist in the input table.")
+        
+        LOGGER.info(f"Available string column: {string_columns[-1]}")
+
         # Ensure the input table has at least one column
-        if len(input_table_schema.column_names) == 0:
-            raise ValueError("Input table must have at least one column.")
+        if self.input_column is None:
+            self.input_column = string_columns[-1][0]
 
         # Validate that the selected column exists in the input table
         if self.input_column not in input_table_schema.column_names:
             raise ValueError(f"Selected column '{self.input_column}' does not exist in the input table.")
         return None
-
     def execute(self, exec_context, input_table):
         # Convert KNIME input table to pandas DataFrame
         if hasattr(input_table, "to_pandas"):
@@ -117,5 +123,5 @@ class VisualizerNode:
         else:
             raise ValueError(f"Unsupported column '{self.input_column}' for visualization.")
 
-        
         return knext.view_seaborn()
+    

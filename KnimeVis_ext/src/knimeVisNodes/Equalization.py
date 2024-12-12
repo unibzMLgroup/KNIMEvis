@@ -23,7 +23,7 @@ knimeVis_category = knext.category(
 @knext.node(
     name="Equalization",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/icon.png",
+    icon_path="icons/equalized.png",
     category=knimeVis_category,
     id="eq-image"
 )
@@ -32,8 +32,12 @@ knimeVis_category = knext.category(
     description="Table containing the image file path."
     )
 @knext.output_table(
-    name="Output Table", 
-    description="Table with Histogram details."
+    name="Equalized Matrix (Json)", 
+    description="Table with equalized images."
+    )
+@knext.output_table(
+    name="Equalized Image", 
+    description="Table with other string columns."
     )
 
 class Equalization:
@@ -59,32 +63,34 @@ class Equalization:
         input_schema_1: knext.Schema,
     ):
         
-        image_columns = [(c.name, c.ktype) for c in input_schema_1 if kutil.is_png(c) ]
+        image_columns = [(c.name, c.ktype) for c in input_schema_1 if kutil.is_png(c)]
 
         if not image_columns:
-            raise ValueError("No string columns available for image paths.")
+            raise ValueError("Image column does not exist in the input table.")
+        
+        LOGGER.info(f"Available image column: {image_columns[-1]}")
 
-        LOGGER.info(f"Available image path columns: {image_columns[-1]}")
-
-        # Set default column if not already set
         if self.image_column is None:
             self.image_column = image_columns[-1][0]
        
-        # Log selected column
-        LOGGER.warning(f"Selected image path column: {self.image_column}")
+        LOGGER.warning(f"Selected image column: {self.image_column}")
         
-        # updated schema
-        output_schema = input_schema_1.append([
-        knext.Column(knext.logical(Image.Image), "Equalized Image"),
-        knext.Column(knext.string(), "Original Histogram"),
-        knext.Column(knext.string(), "Histogram Equalized"),
-        knext.Column(knext.string(), "Transfer Function"),
-    ])
-
-        return output_schema
+        # Define output schemas for both output tables
+        output_schema_1 = knext.Schema.from_columns([
+            
+            knext.Column(knext.string(), "Original Histogram"),
+            knext.Column(knext.string(), "Histogram Equalized"),
+            knext.Column(knext.string(), "Transfer Function"),
+        ])
+        
+        output_schema_2 = knext.Schema.from_columns([
+            knext.Column(knext.logical(Image.Image), "Equalized Image")
+        ])
+        
+        # Return both output schemas
+        return output_schema_1, output_schema_2
 
     def execute(self, exec_context, input_table):
-        # Convert KNIME ArrowTable or dictionary to pandas DataFrame
         if hasattr(input_table, "to_pandas"):
             input_df = input_table.to_pandas()
         elif isinstance(input_table, pd.DataFrame):
@@ -94,12 +100,10 @@ class Equalization:
         else:
             raise TypeError(f"Unexpected input_table type: {type(input_table)}")
 
-        # Initialize output lists
         Original_hist = []
         hist_equalize = []
         transfer_functions = []
-        
-        # Histogram Equalization Functions
+
         def imhist(im):
             m, n = im.shape
             h = [0.0] * 256
@@ -122,47 +126,44 @@ class Equalization:
                     Y[i, j] = sk[im[i, j]]
             H = imhist(Y)
             return Y, h, H, sk
-        
-        # A function to process and compute the matrix
+
         def process_images(image_paths):
-            
             for image_path in image_paths:
-                # Load the image
                 image = np.array(image_path.convert("L"))
-                #image = np.uint8(Image.open(image_path))  # Ensure 8-bit grayscale
-                if image.ndim == 3:  # Convert to grayscale if RGB
+                if image.ndim == 3:
                     image = np.uint8(0.2126 * image[:, :, 0] +
                                     0.7152 * image[:, :, 1] +
                                     0.0722 * image[:, :, 2])
 
-                # Apply histogram equalization
                 equalized_image, h, new_h, sk = histeq(image)
 
-                # Save results to lists for JSON columns
                 Original_hist.append(h.tolist())
                 hist_equalize.append(new_h.tolist())
                 transfer_functions.append(sk.tolist())
 
-                # Yield the equalized image and also include the histograms in the table
                 yield equalized_image, h.tolist(), new_h.tolist(), sk.tolist()
 
-        # Apply the process_images function to all rows in the image column
         equalized_images = []
         original_histograms = []
         hist_equalized = []
         transfer_functions_list = []
-        
+
         for image, hist, eq_hist, tf in process_images(input_df[self.image_column]):
-            equalized_images.append(Image.fromarray(image))  
+            equalized_images.append(Image.fromarray(image))
             original_histograms.append(json.dumps(hist))
             hist_equalized.append(json.dumps(eq_hist))
             transfer_functions_list.append(json.dumps(tf))
 
-        # Add the equalized images and histogram data to the DataFrame
         input_df["Equalized Image"] = equalized_images
         input_df["Original Histogram"] = original_histograms
         input_df["Histogram Equalized"] = hist_equalized
         input_df["Transfer Function"] = transfer_functions_list
+        
+        # output tables for both output ports
+        output_df_1 = input_df[[ "Original Histogram", "Histogram Equalized", "Transfer Function"]]
+        output_df_2 = input_df[["Equalized Image"]]  
 
-        # Return the DataFrame as a KNIME table
-        return knext.Table.from_pandas(input_df)
+        # Return both output tables
+        return knext.Table.from_pandas(output_df_1), knext.Table.from_pandas(output_df_2)
+
+    
