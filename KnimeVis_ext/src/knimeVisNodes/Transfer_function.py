@@ -22,17 +22,27 @@ knimeVis_category = knext.category(
 )
 
 @knext.node(
-    name="Histogram Visualizer",
+    name="Equalization Visualizer",
     node_type=knext.NodeType.VISUALIZER,
-    icon_path="icons/icon.png",
+    icon_path="icons/visualizations.png",
     category=knimeVis_category,
     id = "vl-image"
 )
-@knext.input_table(name="Input Table", description="Table containing histogram equalization data.")
-@knext.output_view(name="Output View", description=" visualization of the selected column.")
+@knext.input_table(
+    name="Input Table", 
+    description="Table containing histogram equalization data."
+    )
+@knext.output_view(
+    name="Output View", 
+    description="Seaborn visualization of the selected column."
+    )
 class VisualizerNode:
+    
     """
-    Visualizes data dynamically based on the selected column of the input table.
+    Histogram Transformation and Visualization
+
+    This node provides a comprehensive visualization of histogram equalization. This node provides you a view of the original image, the equalized image, and the corresponding transfer function (mapping from original to equalized intensity levels). This visualization facilitates better understanding of the matrix and evaluation of the histogram equalization and its impact on image contrast enhancement. 
+
     """
     input_column = knext.ColumnParameter(
         "Input Column",
@@ -43,9 +53,16 @@ class VisualizerNode:
 
     def configure(self, config_context, input_table_schema):
         
+        string_columns = [(c.name, c.ktype) for c in input_table_schema if kutil.is_string(c)]
+
+        if not string_columns:
+            raise ValueError("String column does not exist in the input table.")
+        
+        LOGGER.info(f"Available string column: {string_columns[-1]}")
+
         # Ensure the input table has at least one column
-        if len(input_table_schema.column_names) == 0:
-            raise ValueError("Input table must have at least one column.")
+        if self.input_column is None:
+            self.input_column = string_columns[-1][0]
 
         # Validate that the selected column exists in the input table
         if self.input_column not in input_table_schema.column_names:
@@ -110,3 +127,4 @@ class VisualizerNode:
 
         
         return knext.view_seaborn()
+    
