@@ -22,7 +22,7 @@ knimeVis_category = knext.category(
 @knext.node(
     name="Image Loader",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/.png",
+    icon_path="icons/icon.png",
     category=knimeVis_category,
     id="dl-image",
 )
