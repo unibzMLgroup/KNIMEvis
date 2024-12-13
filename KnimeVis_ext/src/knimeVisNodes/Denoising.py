@@ -11,7 +11,7 @@ import os
 # Logger setup
 LOGGER = logging.getLogger(__name__)
 
-# define sub-category here
+# Define sub-category here
 knimeVis_category = knext.category(
     path="/community/unibz/",
     level_id="imageProc",
@@ -45,7 +45,7 @@ class Denoising:
     This node reduces noise in images by applying advanced filtering techniques, enhancing image clarity and quality for downstream analysis.
     """
 
-    # define your parameter
+    # Define your parameter
     image_column = knext.ColumnParameter(
         label="Image Column",
         description="Select the column to apply Denoising.",
@@ -65,12 +65,6 @@ class Denoising:
         enum=AlgorithmOptions
     )
 
-    algorithm_selection_param = knext.EnumParameter(
-        label="Denoising Algorithm Selection",
-        description="Choose the algorithm to apply for reducing noise and producing clearer, denoised images.",
-        default_value=AlgorithmOptions.MEDIAN.name,
-        enum=AlgorithmOptions)
-    
     filter_size =  knext.IntParameter(
         label="Filter size",
         description="Specify an odd value to define the size of the filter box used for image denoising.",
@@ -110,29 +104,21 @@ class Denoising:
     
    
     def execute(self, execute_context: knext.ExecutionContext, input_table: knext.Table) -> knext.Table:
-
         # Start timing
         start_time = time.time()
         
         df = input_table.to_pandas()
         images = df[self.image_column]
-        # selected_algorithm = execute_context.node.get_value("algorithm_selection_param")
-        # df["Denoised Image"] = [self.process_image(i,self.filter_size)for i in images]
-        
-        # Parallel processing of images
+
+        # Parallel processing of images using ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=16) as executor:
             df["Denoised Image"] = list(executor.map(self.process_image, images))
-
-        # Add the selected algorithm to the table
-        # df["Algorithm Used"] = self.algorithm_selection_param
 
         # Stop timing
         end_time = time.time()
         elapsed_time = end_time - start_time
         LOGGER.info(f"Node execution completed in {elapsed_time:.2f} seconds.")
-
         
-            
         return knext.Table.from_pandas(df)
     
 
@@ -151,40 +137,18 @@ class Denoising:
             LOGGER.error(f"Error processing image: {e}")
             return None
             
-    # HACK to work with PIL
-    def median_filter(self,data, filter_size):
-        temp = []
-        data = np.array(data.convert("L"),dtype=np.uint8)
-        indexer = filter_size // 2
-        data_final = []
-        data_final = np.zeros((len(data),len(data[0])))
-        for i in range(len(data)):
-
-            for j in range(len(data[0])):
-
-                for z in range(filter_size):
-                    if i + z - indexer < 0 or i + z - indexer > len(data) - 1:
-                        for c in range(filter_size):
-                            temp.append(0)
-                    else:
-                        if j + z - indexer < 0 or j + indexer > len(data[0]) - 1:
-                            temp.append(0)
-                        else:
-                            for k in range(filter_size):
-                                temp.append(data[i + z - indexer][j + k - indexer])
-                
-                temp.sort()
-                data_final[i][j] = temp[len(temp) // 2]
-                temp = []
-        # HACK to produce images, correct if the case
-        new_img = np.clip(data_final, 0, 255).astype(np.uint8)
-        return Image.fromarray(new_img)
-    
-    def median_filter_opencv(self, image, filter_size):
-        # HACK to work with PIL
+    def median_filter(self, image, filter_size):
         # Convert image to NumPy array
         data = np.array(image.convert("L"), dtype=np.uint8)
-        # Apply OpenCV median filter
+        # Apply OpenCV median filter (without nested loops)
+        denoised = cv.medianBlur(data, filter_size)
+        # Convert back to PIL image
+        return Image.fromarray(denoised)
+    
+    def median_filter_opencv(self, image, filter_size):
+        # Convert image to NumPy array
+        data = np.array(image.convert("L"), dtype=np.uint8)
+        # Apply OpenCV median filter (without nested loops)
         denoised = cv.medianBlur(data, filter_size)
         # Convert back to PIL image
         return Image.fromarray(denoised)
@@ -192,9 +156,7 @@ class Denoising:
     def gaussian_filter_opencv(self, image, filter_size):
         # Convert image to NumPy array
         data = np.array(image.convert("L"), dtype=np.uint8)
-        # Apply Gaussian blur filter
+        # Apply Gaussian blur filter (without nested loops)
         denoised = cv.GaussianBlur(data, (filter_size, filter_size), 0)
         # Convert back to PIL image
         return Image.fromarray(denoised)
-
-    
