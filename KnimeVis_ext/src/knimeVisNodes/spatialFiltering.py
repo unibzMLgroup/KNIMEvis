@@ -60,7 +60,7 @@ class spatialFiltering:
         description="Threshold separates objects from the background in an image by setting a pixel intensity cutoff. Pixels above the threshold are typically classified as foreground (e.g., object or feature of interest), while those below are classified as background",
         default_value=30,
         min_value=3,
-        max_value=150,
+        max_value=250,
     )
 
     class AlgorithmOptions(knext.EnumParameterOptions):
@@ -140,14 +140,24 @@ class spatialFiltering:
     def robert(self,img):
         img = np.array(img.convert("L"), dtype=np.float32)
         r, c = img.shape
-        new_image = np.zeros((r,c)) 
-        r_sunnzi = [[-1,-1],[1,1]]
+        edge_r= np.zeros((r,c))
+        edge_l= np.zeros((r,c))
+        r_sunnzi = [[1,0],[0,-1]]
+        l_sunnzi = [[0,1],[-1,0]]
         for x in range(r):
             for y in range(c):
                 if (y + 2 <= c) and (x + 2 <= r):
                     imgChild = img[x:x+2, y:y+2]
                     list_robert = r_sunnzi*imgChild
-                    new_image[x, y] = abs(list_robert.sum()) # sum and absolute value
+                    edge_r[x, y] = abs(list_robert.sum()) # sum and absolute value
+
+        for x in range(r):
+            for y in range(c):
+                if (y + 2 <= c) and (x + 2 <= r):
+                    imgChild = img[x:x+2, y:y+2]
+                    list_robert = l_sunnzi*imgChild
+                    edge_l[x, y] = abs(list_robert.sum()) # sum and absolute value
+        new_image = np.sqrt(edge_r**2+edge_l**2)
         new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
         return Image.fromarray(new_image)
                     

@@ -40,13 +40,14 @@ class Equalization:
     The output table includes the Equalized Image, showcasing the improved contrast after processing, and three additional columns providing detailed analysis: the Original Histogram of the input image, the Histogram Equalized values post-processing, and the Transfer Function, which maps intensity levels from the original image to the equalized result. These outputs enable users to understand the transformation and its impact on image intensity distribution.
 
     """
+     # define your parameter
     image_column = knext.ColumnParameter(
-        "Select Image Path ",
-        "Select the column containing the image file path",
-        include_none_column=False,
+        label="Image Column",
+        description="Select the column to apply spatial filtering.",
         port_index=0,
         column_filter=kutil.is_png
     )
+
 
     def configure(
             self,

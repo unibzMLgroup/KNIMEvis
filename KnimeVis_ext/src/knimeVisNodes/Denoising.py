@@ -104,7 +104,7 @@ class Denoising:
         
         # Return the updated schema
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "Denoising")])
+            [knext.Column(knext.logical(Image.Image), "Denoised Image")])
 
         return output_schema
     
@@ -117,13 +117,14 @@ class Denoising:
         df = input_table.to_pandas()
         images = df[self.image_column]
         # selected_algorithm = execute_context.node.get_value("algorithm_selection_param")
-
+        # df["Denoised Image"] = [self.process_image(i,self.filter_size)for i in images]
+        
         # Parallel processing of images
         with ThreadPoolExecutor(max_workers=16) as executor:
             df["Denoised Image"] = list(executor.map(self.process_image, images))
 
         # Add the selected algorithm to the table
-        df["Algorithm Used"] = self.algorithm_selection_param
+        # df["Algorithm Used"] = self.algorithm_selection_param
 
         # Stop timing
         end_time = time.time()
@@ -139,11 +140,11 @@ class Denoising:
     def process_image(self,image):
         try:
             if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
-                return self.median_filter(image)
+                return self.median_filter(image,self.filter_size)
             elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
-                return self.median_filter_opencv(image)
+                return self.median_filter_opencv(image,self.filter_size)
             elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
-                return self.gaussian_filter_opencv(image)
+                return self.gaussian_filter_opencv(image,self.filter_size)
             else:
                 raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
         except Exception as e:
