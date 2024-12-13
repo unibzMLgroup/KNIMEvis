@@ -1,14 +1,15 @@
-import knime.extension as knext
+import json
+import logging
 import numpy as np
-import json, logging
-import cv2 as cv
-from utils import knutills as kutil
-from PIL import Image 
+import pandas as pd
+from PIL import Image
+import knime.extension as knext
 import matplotlib.pyplot as plt
 from typing import List
 import seaborn as sns
-import pandas as pd 
+from utils import knutills as kutil
 
+# Logger setup
 LOGGER = logging.getLogger(__name__)
 
 # define sub-category here
@@ -21,11 +22,11 @@ knimeVis_category = knext.category(
 )
 
 @knext.node(
-    name="Histogram Visualizer",
+    name="Equalization Visualizer",
     node_type=knext.NodeType.VISUALIZER,
-    icon_path="icons/icon.png",
+    icon_path="icons/visualizations.png",
     category=knimeVis_category,
-    id = "visual-image"
+    id = "vl-image"
 )
 @knext.input_table(
     name="Input Table", 
@@ -35,8 +36,8 @@ knimeVis_category = knext.category(
     name="Output View", 
     description="Seaborn visualization of the selected column."
     )
-
 class VisualizerNode:
+    
     """
     Histogram Transformation and Visualization
 
@@ -44,7 +45,7 @@ class VisualizerNode:
 
     """
     input_column = knext.ColumnParameter(
-        "Input Column Name",
+        "Input Column",
         "Select the column containing the data for visualization.",
         include_none_column=False,
         column_filter=kutil.is_string
@@ -52,9 +53,16 @@ class VisualizerNode:
 
     def configure(self, config_context, input_table_schema):
         
+        string_columns = [(c.name, c.ktype) for c in input_table_schema if kutil.is_string(c)]
+
+        if not string_columns:
+            raise ValueError("String column does not exist in the input table.")
+        
+        LOGGER.info(f"Available string column: {string_columns[-1]}")
+
         # Ensure the input table has at least one column
-        if len(input_table_schema.column_names) == 0:
-            raise ValueError("Input table must have at least one column.")
+        if self.input_column is None:
+            self.input_column = string_columns[-1][0]
 
         # Validate that the selected column exists in the input table
         if self.input_column not in input_table_schema.column_names:
@@ -70,14 +78,11 @@ class VisualizerNode:
 
         # Ensure the input table is not empty
         if input_df.empty:
-            raise ValueError("Input table is empty, Cannot generate visualization.")
+            raise ValueError("Input table is empty. Cannot generate visualization.")
 
         # Retrieve data from the selected column - first json matrix
         selected_column_data = input_df[self.input_column].iloc[0]
-
-        parsed_data = np.array(json.loads(selected_column_data), dtype=np.float32)  
-        parsed_data = np.clip(parsed_data, 0, 255)  # Clip values to the range [0, 255]
-        parsed_data = parsed_data.astype(np.uint8)  # Convert back to uint8 if needed
+        parsed_data = np.array(json.loads(selected_column_data), dtype=np.uint8)
 
         # Create the plot dynamically based on the selected column
         plt.figure(figsize=(10, 6))
@@ -99,6 +104,8 @@ class VisualizerNode:
             data_min = parsed_data.min()
             data_max = parsed_data.max()
             plt.hist(parsed_data.flatten(), bins=50, range=(data_min, data_max), color="blue", alpha=0.7)
+
+            #plt.hist(parsed_data.flatten(), bins=50, range=(0, 1), color="blue", alpha=0.7)
             plt.title("Histogram Equalized")
             plt.xlabel("Intensity")
             plt.ylabel("Frequency")
@@ -109,6 +116,7 @@ class VisualizerNode:
             data_min = parsed_data.min()
             data_max = parsed_data.max()
             plt.hist(parsed_data.flatten(), bins=50, range=(data_min, data_max), color="blue", alpha=0.7)
+            #plt.hist(parsed_data.flatten(), bins=50, range=(0, 1), color="blue", alpha=0.7)
             plt.title("Original Histogram")
             plt.xlabel("Intensity")
             plt.ylabel("Frequency")
@@ -119,3 +127,4 @@ class VisualizerNode:
 
         
         return knext.view_seaborn()
+    
