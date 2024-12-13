@@ -3,7 +3,9 @@ import numpy as np
 import logging
 import cv2 as cv
 from utils import knutills as kutil
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image 
+import time
 import os
 
 # Logger setup
@@ -109,22 +111,45 @@ class Denoising:
    
     def execute(self, execute_context: knext.ExecutionContext, input_table: knext.Table) -> knext.Table:
 
+        # Start timing
+        start_time = time.time()
+        
         df = input_table.to_pandas()
         images = df[self.image_column]
         # selected_algorithm = execute_context.node.get_value("algorithm_selection_param")
 
-        if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
-            # Execute logic for Algorithm1
-            df["Denoising"] = [self.median_filter(i,self.filter_size)for i in images ]
+        # Helper function to process each image
+        def process_image(image):
+            try:
+                if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
+                    # Execute logic for Algorithm1
+                    df["Denoising"] = [self.median_filter(i,self.filter_size)for i in images ]
 
-        elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
-            # Execute logic for Algorithm1
-            df["Denoising"] = [self.median_filter_opencv(i,self.filter_size)for i in images ]
-        elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
-            # Execute logic for Algorithm1
-            df["Denoising"] = [self.gaussian_filter_opencv(i,self.filter_size)for i in images ]
-        else:
-            raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
+                elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
+                    # Execute logic for Algorithm1
+                    df["Denoising"] = [self.median_filter_opencv(i,self.filter_size)for i in images ]
+                elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
+                    # Execute logic for Algorithm1
+                    df["Denoising"] = [self.gaussian_filter_opencv(i,self.filter_size)for i in images ]
+                else:
+                    raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
+            except Exception as e:
+                LOGGER.error(f"Error processing image: {e}")
+                return None
+
+        # Parallel processing of images
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            df["Denoised Image"] = list(executor.map(process_image, images))
+
+        # Add the selected algorithm to the table
+        df["Algorithm Used"] = self.algorithm_selection_param
+
+        # Stop timing
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        LOGGER.info(f"Node execution completed in {elapsed_time:.2f} seconds.")
+
+        
             
         return knext.Table.from_pandas(df)
     
