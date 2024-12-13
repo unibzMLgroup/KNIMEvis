@@ -55,7 +55,6 @@ class Denoising:
 
     class AlgorithmOptions(knext.EnumParameterOptions):
         MEDIAN = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
-        MEDIAN_openCV = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
         GAUSSIAN_openCV = ("Gaussian Filtering", "Applies a Gaussian filter to reduce noise.")
 
     algorithm_selection_param = knext.EnumParameter(
@@ -104,13 +103,14 @@ class Denoising:
     
    
     def execute(self, execute_context: knext.ExecutionContext, input_table: knext.Table) -> knext.Table:
+
         # Start timing
         start_time = time.time()
         
         df = input_table.to_pandas()
         images = df[self.image_column]
-
-        # Parallel processing of images using ThreadPoolExecutor
+        
+        # Parallel processing of images
         with ThreadPoolExecutor(max_workers=16) as executor:
             df["Denoised Image"] = list(executor.map(self.process_image, images))
 
@@ -118,37 +118,28 @@ class Denoising:
         end_time = time.time()
         elapsed_time = end_time - start_time
         LOGGER.info(f"Node execution completed in {elapsed_time:.2f} seconds.")
-        
+            
         return knext.Table.from_pandas(df)
     
 
     # Helper function to process each image
-    def process_image(self,image):
+    def process_image(self, image):
         try:
             if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
-                return self.median_filter(image,self.filter_size)
-            elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
-                return self.median_filter_opencv(image,self.filter_size)
+                # Use median_filter_opencv for MEDIAN option
+                return self.median_filter_opencv(image, self.filter_size)
             elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
-                return self.gaussian_filter_opencv(image,self.filter_size)
+                return self.gaussian_filter_opencv(image, self.filter_size)
             else:
                 raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
         except Exception as e:
             LOGGER.error(f"Error processing image: {e}")
             return None
             
-    def median_filter(self, image, filter_size):
-        # Convert image to NumPy array
-        data = np.array(image.convert("L"), dtype=np.uint8)
-        # Apply OpenCV median filter (without nested loops)
-        denoised = cv.medianBlur(data, filter_size)
-        # Convert back to PIL image
-        return Image.fromarray(denoised)
-    
     def median_filter_opencv(self, image, filter_size):
         # Convert image to NumPy array
         data = np.array(image.convert("L"), dtype=np.uint8)
-        # Apply OpenCV median filter (without nested loops)
+        # Apply OpenCV median filter
         denoised = cv.medianBlur(data, filter_size)
         # Convert back to PIL image
         return Image.fromarray(denoised)
@@ -156,7 +147,7 @@ class Denoising:
     def gaussian_filter_opencv(self, image, filter_size):
         # Convert image to NumPy array
         data = np.array(image.convert("L"), dtype=np.uint8)
-        # Apply Gaussian blur filter (without nested loops)
+        # Apply Gaussian blur filter
         denoised = cv.GaussianBlur(data, (filter_size, filter_size), 0)
         # Convert back to PIL image
         return Image.fromarray(denoised)
