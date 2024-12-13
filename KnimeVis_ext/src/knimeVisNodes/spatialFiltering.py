@@ -101,7 +101,7 @@ class spatialFiltering:
 
         # Return the updated schema
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "Filtering")])
+            [knext.Column(knext.logical(Image.Image), "EdgeDetectedImage")])
 
         return output_schema
     
