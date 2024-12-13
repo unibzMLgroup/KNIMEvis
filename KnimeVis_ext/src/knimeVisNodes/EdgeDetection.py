@@ -21,11 +21,11 @@ knimeVis_category = knext.category(
 
 # Node definition
 @knext.node(
-    name="Spatial Filtering",
+    name="Edge Detection",
     node_type=knext.NodeType.MANIPULATOR,
     icon_path="icons/filterIcon.png",
     category=knimeVis_category,
-    id="filtering-image",
+    id="edgdet-image",
 )
 @knext.output_table(
     name="Image Data",
@@ -37,9 +37,9 @@ knimeVis_category = knext.category(
     description="Table containing image",
 )
 
-class spatialFiltering:
+class EdgeDetection:
     """
-    Spatial Filtering Node
+    Edge detection Node
 
     The Spatial Filtering Node is a custom KNIME node designed to perfrom Edge detection. 
     
@@ -200,12 +200,9 @@ class spatialFiltering:
         # Convert image to grayscale
         gray_image = np.array(image.convert("L"), dtype=np.uint8)
 
-        # Apply Gaussian blur to reduce noise (optional but recommended)
-        blurred_image = cv.GaussianBlur(gray_image, (5, 5), 0)
-
         # Apply Sobel filter in both X and Y directions
-        sobel_x = cv.Sobel(blurred_image, cv.CV_64F, 1, 0, ksize=3)
-        sobel_y = cv.Sobel(blurred_image, cv.CV_64F, 0, 1, ksize=3)
+        sobel_x = cv.Sobel(gray_image, cv.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv.Sobel(gray_image, cv.CV_64F, 0, 1, ksize=3)
 
         # Calculate gradient magnitude (sqrt(sobel_x^2 + sobel_y^2))
         gradient_magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
@@ -214,8 +211,9 @@ class spatialFiltering:
         gradient_magnitude = np.clip(gradient_magnitude / np.max(gradient_magnitude) * 255, 0, 255).astype(np.uint8)
 
         # Apply thresholding to keep only significant edges (adjust threshold as needed)
-        # TODO check thresholding for opencv
-        _, thresholded_image = cv.threshold(gradient_magnitude, 50, 255, cv.THRESH_BINARY)
+        thresholded_image = np.clip(gradient_magnitude, np.min(gradient_magnitude), self.threshold).astype(np.uint8)
+        ## TODO check thresholding for opencv
+        #_, thresholded_image = cv.threshold(gradient_magnitude, 50, 255, cv.THRESH_BINARY)
 
         # Convert back to an image
         return Image.fromarray(thresholded_image)
