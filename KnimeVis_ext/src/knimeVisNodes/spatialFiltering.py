@@ -141,16 +141,16 @@ class SpatialFiltering:
     def robert(self,img):
         img = np.array(img.convert("L"), dtype=np.float32)
         r, c = img.shape
-        new_img = np.zeros((r,c)) 
+        new_image = np.zeros((r,c)) 
         r_sunnzi = [[-1,-1],[1,1]]
         for x in range(r):
             for y in range(c):
                 if (y + 2 <= c) and (x + 2 <= r):
                     imgChild = img[x:x+2, y:y+2]
                     list_robert = r_sunnzi*imgChild
-                    new_img[x, y] = abs(list_robert.sum()) # sum and absolute value
-        new_img = np.clip(new_img, np.min(new_img), self.threshold).astype(np.uint8)
-        return Image.fromarray(new_img)
+                    new_image[x, y] = abs(list_robert.sum()) # sum and absolute value
+        new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
+        return Image.fromarray(new_image)
                     
     # # The implementation of sobel operator
     def sobel(self,img):
@@ -167,8 +167,8 @@ class SpatialFiltering:
                 new_imageY[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * s_suanziY))
                 new_image[i+1, j+1] = (new_imageX[i+1, j+1]*new_imageX[i+1,j+1] + new_imageY[i+1, j+1]*new_imageY[i+1,j+1])**0.5
 
-        new_img = np.clip(new_img, np.min(new_img), self.threshold).astype(np.uint8)
-        return Image.fromarray(new_img)
+        new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
+        return Image.fromarray(new_image)
     
     # Laplace operator
     def laplace(self,img):
@@ -179,8 +179,8 @@ class SpatialFiltering:
         for i in range(r-2):
             for j in range(c-2):
                 new_image[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * L_sunnzi))
-        new_img = np.clip(new_img, np.min(new_img), self.threshold).astype(np.uint8)
-        return Image.fromarray(new_img)
+        new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
+        return Image.fromarray(new_image)
 
 
 
