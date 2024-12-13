@@ -48,38 +48,38 @@ class Equalization:
         column_filter=kutil.is_png
     )
 
-def configure(
-        self,
-        configure_context: knext.ConfigurationContext,
-        input_schema_1: knext.Schema,
-    ):
-        
-        image_columns = [(c.name, c.ktype) for c in input_schema_1 if kutil.is_png(c)]
-
-        if not image_columns:
-            raise ValueError("No string columns available for image paths.")
-        
-        LOGGER.info(f"Available image path columns: {image_columns[-1]}")
-
-        if self.image_column is None:
-            self.image_column = image_columns[-1][0]
-       
-        LOGGER.warning(f"Selected image path column: {self.image_column}")
-        
-        # Define output schemas for both output tables
-        output_schema_1 = knext.Schema.from_columns([
+    def configure(
+            self,
+            configure_context: knext.ConfigurationContext,
+            input_schema_1: knext.Schema,
+        ):
             
-            knext.Column(knext.string(), "Original Histogram"),
-            knext.Column(knext.string(), "Histogram Equalized"),
-            knext.Column(knext.string(), "Transfer Function"),
-        ])
+            image_columns = [(c.name, c.ktype) for c in input_schema_1 if kutil.is_png(c)]
+
+            if not image_columns:
+                raise ValueError("No string columns available for image paths.")
+            
+            LOGGER.info(f"Available image path columns: {image_columns[-1]}")
+
+            if self.image_column is None:
+                self.image_column = image_columns[-1][0]
         
-        output_schema_2 = knext.Schema.from_columns([
-            knext.Column(knext.logical(Image.Image), "Equalized Image")
-        ])
-        
-        # Return both output schemas
-        return output_schema_1, output_schema_2
+            LOGGER.warning(f"Selected image path column: {self.image_column}")
+            
+            # Define output schemas for both output tables
+            output_schema_1 = knext.Schema.from_columns([
+                
+                knext.Column(knext.string(), "Original Histogram"),
+                knext.Column(knext.string(), "Histogram Equalized"),
+                knext.Column(knext.string(), "Transfer Function"),
+            ])
+            
+            output_schema_2 = knext.Schema.from_columns([
+                knext.Column(knext.logical(Image.Image), "Equalized Image")
+            ])
+            
+            # Return both output schemas
+            return output_schema_1, output_schema_2
 
     def execute(self, exec_context, input_table):
         if hasattr(input_table, "to_pandas"):

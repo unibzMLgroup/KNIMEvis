@@ -37,7 +37,7 @@ knimeVis_category = knext.category(
     description="Table containing image",
 )
 
-class SpatialFiltering:
+class spatialFiltering:
     """
     Spatial Filtering Node
 
@@ -75,7 +75,6 @@ class SpatialFiltering:
         description="Select the algorithm to produce spatial filtering",
         default_value=AlgorithmOptions.SOBEL.name,
         enum=AlgorithmOptions)
-    
     
     def configure(
         self,
