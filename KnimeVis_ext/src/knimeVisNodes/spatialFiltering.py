@@ -208,26 +208,3 @@ class SpatialFiltering:
         # Convert back to an image
         return Image.fromarray(thresholded_image)
     
-        # images = df[self.image_column]
-
-        # # Helper function to process each image
-        # def process_image(image):
-        #     try:
-        #         if isinstance(image, Image.Image):
-        #             return self.sobel_edge_detection(image)
-        #         else:
-        #             image = Image.open(image)
-        #             return self.sobel_edge_detection(image)
-        #     except Exception as e:
-        #         LOGGER.error(f"Error processing image: {e}")
-        #         return None
-
-        # # Parallel processing of images
-        # with ThreadPoolExecutor(max_workers=16) as executor:
-        #     df["Edge Detected Image"] = list(executor.map(process_image, images))
-
-        # # Stop timing
-        # end_time = time.time()
-        # elapsed_time = end_time - start_time
-        # LOGGER.info(f"Node execution completed in {elapsed_time:.2f} seconds.")
-

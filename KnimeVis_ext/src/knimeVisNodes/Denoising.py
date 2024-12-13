@@ -118,28 +118,9 @@ class Denoising:
         images = df[self.image_column]
         # selected_algorithm = execute_context.node.get_value("algorithm_selection_param")
 
-        # Helper function to process each image
-        def process_image(image):
-            try:
-                if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
-                    # Execute logic for Algorithm1
-                    df["Denoising"] = [self.median_filter(i,self.filter_size)for i in images ]
-
-                elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
-                    # Execute logic for Algorithm1
-                    df["Denoising"] = [self.median_filter_opencv(i,self.filter_size)for i in images ]
-                elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
-                    # Execute logic for Algorithm1
-                    df["Denoising"] = [self.gaussian_filter_opencv(i,self.filter_size)for i in images ]
-                else:
-                    raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
-            except Exception as e:
-                LOGGER.error(f"Error processing image: {e}")
-                return None
-
         # Parallel processing of images
         with ThreadPoolExecutor(max_workers=16) as executor:
-            df["Denoised Image"] = list(executor.map(process_image, images))
+            df["Denoised Image"] = list(executor.map(self.process_image, images))
 
         # Add the selected algorithm to the table
         df["Algorithm Used"] = self.algorithm_selection_param
@@ -153,6 +134,22 @@ class Denoising:
             
         return knext.Table.from_pandas(df)
     
+
+    # Helper function to process each image
+    def process_image(self,image):
+        try:
+            if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
+                return self.median_filter(image)
+            elif self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN_openCV.name:
+                return self.median_filter_opencv(image)
+            elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
+                return self.gaussian_filter_opencv(image)
+            else:
+                raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
+        except Exception as e:
+            LOGGER.error(f"Error processing image: {e}")
+            return None
+            
     # HACK to work with PIL
     def median_filter(self,data, filter_size):
         temp = []
