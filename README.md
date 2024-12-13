@@ -43,7 +43,7 @@ To start developing KNIME nodes with Python, follow these steps:
     ```-Dknime.python.extension.config=path/to/config/config.yml```
 
 [comment]: # TODO remove from the official repo
-## (Bundling a Python extension)[https://docs.knime.com/latest/pure_python_node_extensions_guide/index.html#extension-bundling]
+## [Bundling a Python extension](https://docs.knime.com/latest/pure_python_node_extensions_guide/index.html#extension-bundling)
 
 Once you have finished implementing your Python extension, you can bundle it, together with the appropriate conda environment, into a local update site. This allows other users to install your extension in the KNIME Analytics Platform.
 
@@ -53,27 +53,33 @@ We provide a special conda package, knime-extension-bundling, which contains the
 By default, the conda environment will bundle the extension for the latest KNIME Analytics Platform version. If you want to bundle the extension for a specific KNIME version, you have to install the corresponding conda package. You can specify the version when you create the environment , e.g. knime-extension-bundling=5.4. When building an older version, the environment YAML files must contain the corresponding versions of the knime-python-base and knime-extension packages, e.g.- knime-python-base=5.3 when bundling for version 5.3.
 
 1. **Create a fresh environment** prepopulated with the knime-extension-bundling package:
+
     ```
     conda create -n knime-ext-bundling -c knime -c conda-forge knime-extension-bundling=5.4
     ```
+
 2.   **Activate the environment**
+
     ```
     conda activate knime-ext-bundling
     ```
+
 3. **Run bulding script**    
+
     With the environment activated, run the following command to bundle your Python extension:
 
-        macOS/Linux:
-        ```
-        build_python_extension.py <path/to/directoryof/myextension/> <path/to/directoryof/output>
-        ```
-        Windows:
-        ```
-        build_python_extension.bat <path/to/directoryof/myextension/> <path/to/directoryof/output>
-        ```
-        where <path/to/directoryof/myextension/> is the path to the directory containing the knime.yml file, and <path/to/directoryof/output> is the path to the directory where the bundled extension repository will be stored.
+    _macOS/Linux_:
+    
+    ```
+    build_python_extension.py <path/to/directoryof/myextension/> <path/to/directoryof/output>
+    ```
+    _Windows_:
+    ```
+    build_python_extension.bat <path/to/directoryof/myextension/> <path/to/directoryof/output>
+    ```
+    where <path/to/directoryof/myextension/> is the path to the directory containing the knime.yml file, and <path/to/directoryof/output> is the path to the directory where the bundled extension repository will be stored.
 
-        Further instructions are given by build_python_extension.py --help (macOS, Linux) or build_python_extension.bat --help (Windows) and will be outlined upon execution of the script.
+    Further instructions are given by build_python_extension.py --help (macOS, Linux) or build_python_extension.bat --help (Windows) and will be outlined upon execution of the script.
     
 The bundling process can take several minutes to complete. 
 
