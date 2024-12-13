@@ -1,5 +1,4 @@
 **/__pycache__/
 */.DS_Store
 **/.DS_Store
-.gitignore
-/KnimeVis_ext/config.yml
+KnimeVis_ext/config.yml
