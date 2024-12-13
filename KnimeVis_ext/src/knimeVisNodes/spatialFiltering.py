@@ -158,6 +158,7 @@ class spatialFiltering:
                     list_robert = l_sunnzi*imgChild
                     edge_l[x, y] = abs(list_robert.sum()) # sum and absolute value
         new_image = np.sqrt(edge_r**2+edge_l**2)
+        new_image = new_image/np.max(new_image)*255
         new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
         return Image.fromarray(new_image)
                     
@@ -188,6 +189,8 @@ class spatialFiltering:
         for i in range(r-2):
             for j in range(c-2):
                 new_image[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * L_sunnzi))
+
+        new_image = new_image/np.max(new_image)*255      
         new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
         return Image.fromarray(new_image)
 
