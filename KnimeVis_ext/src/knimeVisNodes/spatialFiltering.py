@@ -41,7 +41,10 @@ class SpatialFiltering:
     """
     Spatial Filtering Node
 
-    The Spatial Filtering Node is a custom KNIME node designed for performing spatial filtering on images.
+    The Spatial Filtering Node is a custom KNIME node designed to perfrom Edge detection. 
+    
+    Edge detection involves identifying and locating sharp discontinuities in an image, which correspond to significant changes in intensity or color. 
+    These discontinuities are referred to as edges, essential for understanding the structure and content of an image.
     """
 
     # define your parameter
@@ -53,18 +56,18 @@ class SpatialFiltering:
     )
 
     threshold =  knext.IntParameter(
-        label="threshold",
-        description="...",
+        label="Threshold",
+        description="Threshold separates objects from the background in an image by setting a pixel intensity cutoff. Pixels above the threshold are typically classified as foreground (e.g., object or feature of interest), while those below are classified as background",
         default_value=30,
         min_value=3,
         max_value=150,
     )
 
     class AlgorithmOptions(knext.EnumParameterOptions):
-        SOBEL = ("Sobel", "Description..")
-        SOBEL_OpenCV = ("SOBEL_OpenCV","SOBEL_OpenCV")
-        LAPLACE = ("Laplace", "Description..")
-        ROBERT = ("Robert", "Description..")
+        SOBEL = ("Sobel", "The Sobel algorithm detects edges in images by calculating gradient magnitudes using convolution with 3x3 kernels, highlighting areas of high intensity change for effective edge detection.")
+        SOBEL_OpenCV = ("SOBEL_OpenCV","The Sobel algorithm detects edges in images by calculating gradient magnitudes using convolution with 3x3 kernels, highlighting areas of high intensity change for effective edge detection. The algoritm is impemented in the OpenCV library")
+        LAPLACE = ("Laplace", "The Laplacian operator detects edges in images by calculating second-order derivatives, highlighting rapid intensity changes. It measures how much the average value of a function around a point deviates from the value at that point, indicating regions of local maxima or minima.")
+        ROBERT = ("Robert", "The Roberts operator detects edges by calculating gradients using diagonal 2x2 convolution kernels, highlighting sharp intensity changes, and is efficient for real-time applications despite sensitivity to noise.")
 
     # TODO add parameter depending on the selected algorithm
     algorithm_selection_param = knext.EnumParameter(
