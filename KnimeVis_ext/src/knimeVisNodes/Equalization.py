@@ -75,10 +75,13 @@ class Equalization:
                 knext.Column(knext.string(), "Transfer Function"),
             ])
             
-            output_schema_2 = knext.Schema.from_columns([
-                knext.Column(knext.logical(Image.Image), "Equalized Image")
-            ])
-            
+            # output_schema_2 = knext.Schema.from_columns([
+            #     knext.Column(knext.logical(Image.Image), "Equalized Image")
+            # ])
+
+            # TODO setted for demo
+            output_schema_2 = input_schema_1.append(
+             [knext.Column(knext.logical(Image.Image), "Equalized Image")])
             # Return both output schemas
             return output_schema_1, output_schema_2
 
