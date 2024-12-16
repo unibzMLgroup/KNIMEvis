@@ -2,4 +2,4 @@
 it.unibz.ml.knimeVis: # {group_id}.{name} from the knime.yml
   src: C:\Users\ARosani\Desktop\KNIMEWorkshop\gitlab_kmimeVZLab\knimevizlab\KnimeVis_ext # Local path to folder containing the extension files 
   conda_env_path: C:\Users\ARosani\AppData\Local\miniconda3\envs\my_python_env
-  debug_mode: true # Optional line, if set to true, it will always use the latest changes of execute/configure, when that method is used within the KNIME Analytics Platform
+  debug_mode: false # Optional line, if set to true, it will always use the latest changes of execute/configure, when that method is used within the KNIME Analytics Platform
