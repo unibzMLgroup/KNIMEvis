@@ -28,9 +28,9 @@ knimeVis_category = knext.category(
     category=knimeVis_category,
     id="eq-image"
 )
-@knext.input_table(name="Input Image Path", description="Table containing the image file path.")
-@knext.output_table(name="Equalized Image", description="Table with other string columns.")
-@knext.output_table(name="Equalized Matrix (Json)", description="Table with equalized images.")
+@knext.input_table(name="Input Image Path", description="Table containing the image file.")
+@knext.output_table(name="Equalized Image", description="Table containing the equlaized image.")
+@knext.output_table(name="Histograms Table", description="Table containing histogram columns of the image.")
 
 class Equalization:
     """    
