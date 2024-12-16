@@ -1,5 +1,6 @@
 import json
 import logging
+import copy
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -28,8 +29,8 @@ knimeVis_category = knext.category(
     id="eq-image"
 )
 @knext.input_table(name="Input Image Path", description="Table containing the image file path.")
-@knext.output_table(name="Equalized Matrix (Json)", description="Table with equalized images.")
 @knext.output_table(name="Equalized Image", description="Table with other string columns.")
+@knext.output_table(name="Equalized Matrix (Json)", description="Table with equalized images.")
 
 class Equalization:
     """    
@@ -68,20 +69,23 @@ class Equalization:
             LOGGER.warning(f"Selected image path column: {self.image_column}")
             
             # Define output schemas for both output tables
-            output_schema_1 = knext.Schema.from_columns([
+            # output_schema_1 = knext.Schema.from_columns([
+            #     knext.Column(knext.logical(Image.Image), "Equalized Image")
+            # ])
+
+            # TODO setted for demo
+            output_schema_1 = input_schema_1.append(
+                [knext.Column(knext.logical(Image.Image), "Equalized Image")])
+            
+            output_schema_2 = knext.Schema.from_columns([
                 
                 knext.Column(knext.string(), "Original Histogram"),
                 knext.Column(knext.string(), "Histogram Equalized"),
                 knext.Column(knext.string(), "Transfer Function"),
             ])
             
-            # output_schema_2 = knext.Schema.from_columns([
-            #     knext.Column(knext.logical(Image.Image), "Equalized Image")
-            # ])
-
-            # TODO setted for demo
-            output_schema_2 = input_schema_1.append(
-             [knext.Column(knext.logical(Image.Image), "Equalized Image")])
+            
+            
             # Return both output schemas
             return output_schema_1, output_schema_2
 
@@ -94,7 +98,8 @@ class Equalization:
             input_df = pd.DataFrame.from_dict(input_table)
         else:
             raise TypeError(f"Unexpected input_table type: {type(input_table)}")
-
+        
+        input_df2 = copy.deepcopy(input_df)
         Original_hist = []
         hist_equalize = []
         transfer_functions = []
@@ -150,16 +155,16 @@ class Equalization:
             transfer_functions_list.append(json.dumps(tf))
 
         input_df["Equalized Image"] = equalized_images
-        input_df["Original Histogram"] = original_histograms
-        input_df["Histogram Equalized"] = hist_equalized
-        input_df["Transfer Function"] = transfer_functions_list
+        input_df2["Original Histogram"] = original_histograms
+        input_df2["Histogram Equalized"] = hist_equalized
+        input_df2["Transfer Function"] = transfer_functions_list
         
         # Create output tables for both output ports
-        output_df_1 = input_df[[ "Original Histogram", "Histogram Equalized", "Transfer Function"]]
-        output_df_2 = input_df[["Equalized Image"]]  # Adjust column names as needed
+        output_df_2 = input_df2[[ "Original Histogram", "Histogram Equalized", "Transfer Function"]]
+        output_df_1 = input_df["Equalized Image"]  # Adjust column names as needed
 
         # Return both output tables
-        return knext.Table.from_pandas(output_df_1), knext.Table.from_pandas(output_df_2)
+        return knext.Table.from_pandas(input_df),knext.Table.from_pandas(output_df_2)
 
     
     
