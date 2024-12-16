@@ -54,8 +54,8 @@ class Denoising:
     )
 
     class AlgorithmOptions(knext.EnumParameterOptions):
-        MEDIAN = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively.")
-        GAUSSIAN_openCV = ("Gaussian Filtering", "Applies a Gaussian filter to reduce noise.")
+        MEDIAN = ("Median Filtering", "Removes noise by replacing each pixel's value with the median value of the surrounding pixels, preserving edges effectively. Algorithm by OpenCV library")
+        GAUSSIAN = ("Gaussian Filtering", "Applies a Gaussian filter to reduce noise. Algorithm by OpenCV library")
 
     algorithm_selection_param = knext.EnumParameter(
         label="Denoising Algorithm Selection",
