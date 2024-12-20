@@ -3,7 +3,7 @@
 ![alt text](LogoProject.png)
 
 ## Description
-This repository serves as the official [UNIBZ](https://www.unibz.it) project for creating custom KNIME nodes dedicated to image processing using Python. The goal is to provide seamless integration between KNIME's workflow analytics platform and Python's advanced capabilities for image analysis and processing.
+This repository serves as the official [UNIBZ](https://www.unibz.it, target=new) project for creating custom KNIME nodes dedicated to image processing using Python. The goal is to provide seamless integration between KNIME's workflow analytics platform and Python's advanced capabilities for image analysis and processing.
 
 With this project, users can:
 
