@@ -1,0 +1,16 @@
+name: knimeVis # Will be concatenated with the group_id to an ID
+author: Giuseppe Di Fatta, Andrea Rosani, Thomas Borsani, Raziyeh Tabatabaei, Muhammad Ali Bhatti Hafiz
+extension_module: src/knimeVis # The .py Python module containing the nodes of your extension
+description: UniBZ Machine Learning Research Group - KNIME extension for image processing # Human readable bundle name / description
+long_description: Pure-Python extension image processing.
+group_id: it.unibz.ml
+version: 0.1.0 # Version of this Python node extension
+vendor: Machine Learning Research Group, Free University of Bozen-Bolzano, Italy
+license_file: LICENSE.TXT # Best practice: put your LICENSE.TXT next to the knime.yml; otherwise you would need to change to path/to/LICENSE.txt
+
+# env_yml_path: env.yml
+env_yml_path:
+  osx-64: env_oxs.yml
+  osx-arm64: env_oxs.yml # available starting from KNIME Analytics Platform 4.7
+  linux-64: env_linux.yml
+  win-64: env_win64.yml
