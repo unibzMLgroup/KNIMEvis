@@ -42,7 +42,7 @@ class ImageReader:
     """
     Image Reader Node
 
-    This node loads an image from the specified file path and returns it as a PIL Image.
+    This node loads an image from the specified file path and returns it as a png image.
     """
     # define your parameter
     image_path_column = knext.ColumnParameter(
