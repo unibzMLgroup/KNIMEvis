@@ -166,8 +166,8 @@ class KnimeYOLO:
         df = input_table.to_pandas()
         
         # Initialize lists to collect results
-        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": [], "class": [], "confidence": []}
-        masks_data = {"img_id": [], "masks": [], "class": [], "confidence": []}
+        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": [], "class": [], "confidences": []}
+        masks_data = {"img_id": [], "masks": [], "class": [], "confidences": []}
 
         for idx in df.index:
             img = df.at[idx,self.image_column]  # Get image path or data
@@ -186,7 +186,7 @@ class KnimeYOLO:
                     boxes_data["width"].append(single_box[2])
                     boxes_data["height"].append(single_box[3])
                     boxes_data["class"].append(class_names[i] if i < len(class_names) else "unknown")
-                    boxes_data["confidence"].append(confidences[i] if i < len(confidences) else -1)
+                    boxes_data["confidences"].append(confidences[i] if i < len(confidences) else -1)
 
             
             if mask_images is not None and len(mask_images) > 0:
@@ -195,7 +195,7 @@ class KnimeYOLO:
                     masks_data["img_id"].append(img_id)
                     masks_data["masks"].append(single_mask)  # Convert to list for schema
                     masks_data["class"].append(class_names[i] if i < len(class_names) else "unknown")
-                    masks_data["confidence"].append(confidences[i] if i < len(confidences) else -1)
+                    masks_data["confidences"].append(confidences[i] if i < len(confidences) else -1)
 
             # Append the processed image with mask to the DataFrame
             df.at[idx, "ImageMasked"] = img_res
