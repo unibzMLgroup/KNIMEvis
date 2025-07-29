@@ -138,7 +138,7 @@ class Denoising:
             
     def median_filter_opencv(self, image, filter_size):
         # Convert image to NumPy array
-        data = np.array(image.convert("L"), dtype=np.uint8)
+        data = np.array(image, dtype=np.uint8)
         # Apply OpenCV median filter
         denoised = cv.medianBlur(data, filter_size)
         # Convert back to PIL image
@@ -146,7 +146,7 @@ class Denoising:
     
     def gaussian_filter_opencv(self, image, filter_size):
         # Convert image to NumPy array
-        data = np.array(image.convert("L"), dtype=np.uint8)
+        data = np.array(image, dtype=np.uint8)
         # Apply Gaussian blur filter
         denoised = cv.GaussianBlur(data, (filter_size, filter_size), 0)
         # Convert back to PIL image
