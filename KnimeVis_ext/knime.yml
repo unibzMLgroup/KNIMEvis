@@ -1,7 +1,7 @@
 name: knimeVis # Will be concatenated with the group_id to an ID
 author: Giuseppe Di Fatta, Andrea Rosani, Thomas Borsani, Raziyeh Tabatabaei, Muhammad Ali Bhatti Hafiz
 extension_module: src/knimeVis # The .py Python module containing the nodes of your extension
-description: UniBZ Machine Learning Research Group - KNIME extension for image processing # Human readable bundle name / description
+description: UniBZ ML -  image processing # Human readable bundle name / description
 long_description: Pure-Python extension image processing.
 group_id: it.unibz.ml
 version: 0.1.0 # Version of this Python node extension
