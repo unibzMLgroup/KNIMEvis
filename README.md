@@ -21,26 +21,9 @@ To start developing KNIME nodes with Python, follow these steps:
     ```
 
 2. **Install the KNIME Analytics Platform**
-    Install [KNIME Analytics Platform](https://docs.knime.com/2024-12/analytics_platform_installation_guide/index.html#_installing_knime_analytics_platform) version 4.6.0 or higher.
-    Make sure to also install the KNIME Python Extension Development (Labs). In case of problem follow the offical guide line on how to develope pure [python nod in KNIME](https://docs.knime.com/latest/pure_python_node_extensions_guide/index.html#extension-bundling)
+    Install [KNIME Analytics Platform](https://docs.knime.com/ap/latest/analytics_platform_installation_guide/#install-knime-analytics-platform) version 5.5.0 or higher.
+    Follow the offical guide line on how to develope pure [python nod in KNIME](https://docs.knime.com/developers/latest/create_a_node_with_python/)
 
-3. **Set up a Conda/Python environment**
-    Create a conda/Python environment containing the [knime-python-base metapackage](https://anaconda.org/knime/knime-python-base), together with the node development API [knime-extension](https://anaconda.org/knime/knime-extension) for the KNIME Analytics Platform you are using
-
-    ```bash
-        cd KnimeVisLab
-        conda env create -f env.yml
-    ```
-
-4. **Modify the config.yml file**
-    Update the following fields in the `config.yml` file:
-        - Set the absolute path to point to the src directory of this repository.
-        - Set the path to the Conda environment you just created.
-
-5. **Update the knime.ini file**
-    Locate the `knime.ini` file in the KNIME installation directory and sdd the following line to the end of the file:
-
-    ```-Dknime.python.extension.config=path/to/config/config.yml```
 
 
 ## Usage
