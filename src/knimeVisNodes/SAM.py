@@ -10,7 +10,7 @@ import cv2
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 from utils import knutils as kutil
 
-torch.set_num_threads(1)  # Limits CPU threading
+#torch.set_num_threads(1)  # Limits CPU threading
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -22,7 +22,7 @@ knimeVis_category = kutil.get_knimeVis_category ()
 @knext.node(
     name="Automatic Segmentation (SAM)",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/sam_icon.png",
+    icon_path="../icons/sam_icon.png",
     category=knimeVis_category,
     id="seg-SAM1"
 )
@@ -71,13 +71,25 @@ class SAMSegmentation:
         default_value="CPU",
         enum=["CPU", "GPU"]
     )
+
+    cpu_threads = knext.IntParameter(
+        label="CPU Threads",
+        description="""Number of CPU threads to use for processing. 
+        Higher values (e.g., 4 or 8) make SAM much faster but use more computer resources. 
+        Set to 1 for minimum resource usage.""",
+        default_value=1,
+        min_value=1,
+        max_value=64,
+        is_advanced=True
+    )
+
     # Advanced Parameters Section
 
     points_per_side = knext.IntParameter(
         label="Points per side",
         description="""Number of points to sample along each image side for generating masks.
         Higher values detect more objects but increase computation time.""",
-        default_value=32,
+        default_value=16,
         min_value=4,
         max_value=128,
         is_advanced=True
@@ -117,7 +129,7 @@ class SAMSegmentation:
         label="Number of crop layers",
         description="""How many layers of crops to run segmentation on.
         0 = only original image, 1+ = additional crops.""",
-        default_value=1,
+        default_value=0,
         min_value=0,
         max_value=5,
         is_advanced=True
@@ -209,13 +221,19 @@ class SAMSegmentation:
         return output_schema_1, output_schema_2
 
     def execute(self, exec_context, input_table):
+
+        # Set CPU threads based on user configuration and system capabilities
+        max_system_threads = os.cpu_count() or 1
+        actual_threads = min(self.cpu_threads, max_system_threads)
+        torch.set_num_threads(actual_threads)
+        LOGGER.info(f"Using {actual_threads} CPU threads for processing.")
         input_df = input_table.to_pandas()
         
         # Validate columns
         if self.image_column not in input_df.columns:
             raise ValueError(f"Image column '{self.image_column}' not found")
-        if "Path" not in input_df.columns:
-            raise ValueError("Path column not found")
+        if self.Image_ID not in input_df.columns:
+            raise ValueError(f"ID column '{self.Image_ID}' not found")
 
         # Load SAM model
         device = "cuda" if self.device == "GPU" and torch.cuda.is_available() else "cpu"
@@ -246,7 +264,7 @@ class SAMSegmentation:
         for idx in input_df.index:
             row = {col: input_df.at[idx, col] for col in input_df.columns}
             try:
-                path = str(row["Path"])
+                path = str(row[self.Image_ID])
                 image = row[self.image_column]
                 
                 if not isinstance(image, Image.Image):

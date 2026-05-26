@@ -16,7 +16,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Dice Scores",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/objdet.png",
+    icon_path="../icons/objdet.png",
     category=knimeVis_category,
     id="box-eval",
 )

@@ -16,7 +16,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Edge Detection",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/filterIcon.png",
+    icon_path="../icons/filterIcon.png",
     category=knimeVis_category,
     id="edgdet-image",
 )
@@ -58,7 +58,7 @@ class EdgeDetection:
 
     class AlgorithmOptions(knext.EnumParameterOptions):
         SOBEL = ("Sobel", "The Sobel algorithm detects edges in images by calculating gradient magnitudes using convolution with 3x3 kernels, highlighting areas of high intensity change for effective edge detection.")
-        SOBEL_OpenCV = ("SOBEL_OpenCV","The Sobel algorithm detects edges in images by calculating gradient magnitudes using convolution with 3x3 kernels, highlighting areas of high intensity change for effective edge detection. The algoritm is impemented in the OpenCV library")
+        SOBEL_OpenCV = ("SOBEL_OpenCV","The Sobel algorithm detects edges in images by calculating gradient magnitudes using convolution with 3x3 kernels, highlighting areas of high intensity change for effective edge detection. The algoritm is implemented in the OpenCV library")
         LAPLACE = ("Laplace", "The Laplacian operator detects edges in images by calculating second-order derivatives, highlighting rapid intensity changes. It measures how much the average value of a function around a point deviates from the value at that point, indicating regions of local maxima or minima.")
         ROBERT = ("Robert", "The Roberts operator detects edges by calculating gradients using diagonal 2x2 convolution kernels, highlighting sharp intensity changes, and is efficient for real-time applications despite sensitivity to noise.")
 
@@ -156,24 +156,25 @@ class EdgeDetection:
         #new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
         return Image.fromarray(new_image)
                     
-    # # The implementation of sobel operator
-    def sobel(self,img):
-        img = np.array(img.convert("L"), dtype=np.float32)
-        r, c = img.shape
-        new_image = np.zeros((r, c))
-        new_imageX = np.zeros(img.shape)
-        new_imageY = np.zeros(img.shape)
-        s_suanziX = np.array([[-1,0,1],[-2,0,2],[-1,0,1]]) # X direction
-        s_suanziY = np.array([[-1,-2,-1],[0,0,0],[1,2,1]])     
-        for i in range(r-2):
-            for j in range(c-2):
-                new_imageX[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * s_suanziX))
-                new_imageY[i+1, j+1] = abs(np.sum(img[i:i+3, j:j+3] * s_suanziY))
-                new_image[i+1, j+1] = (new_imageX[i+1, j+1]*new_imageX[i+1,j+1] + new_imageY[i+1, j+1]*new_imageY[i+1,j+1])**0.5
-        new_image=(new_image / np.max(new_image) * 255).astype(np.uint8)
-        new_image = np.where(new_image >= self.threshold, 255, 0).astype(np.uint8)
-        #new_image = np.clip(new_image, np.min(new_image), self.threshold).astype(np.uint8)
-        return Image.fromarray(new_image)
+    def sobel(self, img):
+        img_np = np.array(img.convert("L"), dtype=np.float32)
+        
+        # define kernel
+        kernel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+        kernel_y = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        # apply convolution using OpenCV's filter2D function, which is optimized for performance
+        grad_x = cv.filter2D(img_np, -1, kernel_x)
+        grad_y = cv.filter2D(img_np, -1, kernel_y)
+        
+        # calculate gradient magnitude
+        new_image = np.sqrt(grad_x**2 + grad_y**2)
+        
+        # normalize to 0-255 and apply threshold
+        new_image = (new_image / np.max(new_image) * 255).astype(np.uint8)
+        output = np.where(new_image >= self.threshold, 255, 0).astype(np.uint8)
+        
+        return Image.fromarray(output)
     
     # Laplace operator
     def laplace(self,img):
@@ -205,11 +206,11 @@ class EdgeDetection:
         # Calculate gradient magnitude (sqrt(sobel_x^2 + sobel_y^2))
         gradient_magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
         
-        # Normalize to 8-bit image
-        gradient_magnitude = np.clip(gradient_magnitude / np.max(gradient_magnitude) * 255, 0, 255).astype(np.uint8)
+        # Normalize from 0 and 255
+        gradient_magnitude = np.uint8(np.absolute(gradient_magnitude) / np.max(gradient_magnitude) * 255)
 
         # Apply thresholding to keep only significant edges (adjust threshold as needed)
-        thresholded_image = np.clip(gradient_magnitude, np.min(gradient_magnitude), self.threshold).astype(np.uint8)
+        thresholded_image = np.where(gradient_magnitude >= self.threshold, 255, 0).astype(np.uint8)
         ## TODO check thresholding for opencv
         #_, thresholded_image = cv.threshold(gradient_magnitude, 50, 255, cv.THRESH_BINARY)
 

@@ -16,7 +16,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Equalization Visualizer",
     node_type=knext.NodeType.VISUALIZER,
-    icon_path="icons/visualizations.png",
+    icon_path="../icons/visualizations.png",
     category=knimeVis_category,
     id = "vl-image"
 )

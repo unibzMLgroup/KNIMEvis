@@ -18,11 +18,19 @@ LOGGER = logging.getLogger(__name__)
 # Define sub-category here
 knimeVis_category = kutil.get_knimeVis_category()
 
+class ModelOptions(knext.EnumParameterOptions):
+    NONE = ("None - USE CUSTOM MODEL", "Provide a custom model path below.")
+    YOLO11N = ("yolo11n-seg.pt", "Nano: Fastest model with the smallest size, suitable for real-time applications on edge devices.")
+    YOLO11S = ("yolo11s-seg.pt", "Small: Good balance between speed and accuracy.")
+    YOLO11M = ("yolo11m-seg.pt", "Medium: More accurate, requires more RAM.")
+    YOLO11L = ("yolo11l-seg.pt", "Large: High accuracy, slower execution.")
+    YOLO11X = ("yolo11x-seg.pt", "Extra Large: Maximum accuracy, very heavy.")
+
 # Node definition
 @knext.node(
     name="YOLO",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/objdet.png",
+    icon_path="../icons/objdet.png",
     category=knimeVis_category,
     id="segment-image",
 )
@@ -38,12 +46,10 @@ knimeVis_category = kutil.get_knimeVis_category()
     name="Image Masks",
     description="Contains the input image overlaid with segmentation masks for visualization.",
 )
-
 @knext.input_table(
     name="Image Data",
     description="Table containing the image(s) to be segmented.",
 )
-
 class KnimeYOLO:
     """
     KnimeYOLO
@@ -69,11 +75,17 @@ class KnimeYOLO:
         port_index=0
     )
 
-    
+    model_name: str = knext.EnumParameter(
+        label="Pretrained model",
+        description="Select one of the pretrained YOLO segmentation models from Ultralytics.",
+        default_value=ModelOptions.YOLO11N.name,
+        enum=ModelOptions,
+    )
+
     # Define the file path parameter
     model_path = knext.LocalPathParameter(
-        label="Model file path",
-        description="Specify the local file path to the YOLO model weights (.pt file).",
+        label="Custom model file path",
+        description="Path to a custom YOLO .pt file. If provided, this overrides the pretrained model selection.",
     )
 
     class DeviceOptions(knext.EnumParameterOptions):
@@ -87,40 +99,63 @@ class KnimeYOLO:
         enum=DeviceOptions
     )
 
-    
-    def configure(
-        self,
-        configure_context: knext.ConfigurationContext,
-        input_schema_1: knext.Schema,
-    ):
+    def _resolve_model_path(self) -> str:
+        models_dir = os.path.join(os.path.dirname(__file__), "models")
+        os.makedirs(models_dir, exist_ok=True)
+
+        if self.model_path and os.path.isfile(self.model_path):
+            return self.model_path
         
+        model_filename = ModelOptions[self.model_name].value[0]
+        local_path = os.path.join(models_dir, model_filename)
+
+        if not os.path.isfile(local_path):
+            LOGGER.info(f"Downloading model {model_filename} to {local_path}...")
+            import shutil
+            temp_model = YOLO(model_filename)
+            downloaded = os.path.join(os.getcwd(), model_filename)
+            if os.path.isfile(downloaded):
+                shutil.move(downloaded, local_path)
+        
+        return local_path
+    
+    def configure(self, configure_context: knext.ConfigurationContext, input_schema_1: knext.Schema):
+        
+        all_column_names = [c.name for c in input_schema_1]
+
         # Filter string columns for image 
-        image_columns = [(c.name, c.ktype) for c in input_schema_1 if kutil.is_png(c) ]
+        image_columns = [
+            c.name for c in input_schema_1 
+            if c.ktype == knext.logical(Image.Image) or c.ktype == knext.string()
+        ]
 
         if not image_columns:
             # If no string columns are found, raise an exception or return None
-            raise ValueError("No string columns available for image paths.")
-        
+            raise ValueError("No image or string columns available for YOLO segmentation.")
         
         # Set default column if not already set
-        if self.image_column is None:
-            self.image_column = image_columns[-1][0]
+        if self.image_column is None or self.image_column not in all_column_names:
+            self.image_column = image_columns[-1]
 
-        if self.image_id is None:
-            self.image_id = input_schema_1[0]
+        if self.image_id is None or self.image_id not in all_column_names:
+            self.image_id = all_column_names[0]
        
         # Log selected column
         LOGGER.info(f"Selected image column: {self.image_column}")
-        print(knext.LogicalType.supported_value_types())
+        LOGGER.info(f"Selected ID column: {self.image_id}")
 
-        if not os.path.isfile(self.model_path):
-            LOGGER.error(f"Model file not found at: {self.model_path}")
-            raise ValueError("Model file not found at the specified path.")
+        if self.model_path and os.path.isfile(self.model_path):
+            pass 
+        else:
+            selected_pretrained = ModelOptions[self.model_name].value[0]
+            if not selected_pretrained:
+                raise ValueError("No model specified. Please select a pretrained model or provide a valid custom model file path.")
         
+        id_type = input_schema_1[self.image_id].ktype
         
         # Return the updated schema
         output_schema_boxes = knext.Schema.from_columns([
-            knext.Column(knext.string(), "img_id"),         
+            knext.Column(id_type, "img_id"),         
             knext.Column(knext.double(), "x_center"),  
             knext.Column(knext.double(), "y_center"),  
             knext.Column(knext.double(), "width"),  
@@ -128,51 +163,47 @@ class KnimeYOLO:
             knext.Column(knext.string(), "class"),  
             knext.Column(knext.double(), "confidences")  
         ])
+        
         output_schema_masks = knext.Schema.from_columns([
-            knext.Column(knext.string(), "img_id"),          
+            knext.Column(id_type, "img_id"),          
             knext.Column(knext.logical(Image.Image), "masks"),
             knext.Column(knext.string(), "class"),  
             knext.Column(knext.double(), "confidences") 
-        ])  
+        ])
 
-        output_schema = input_schema_1.append(
-            [ knext.Column(knext.logical(Image.Image), "ImageMasked")])
+        output_schema = input_schema_1.append([knext.Column(knext.logical(Image.Image), "ImageMasked")])
 
         # Return the output schemas
         return output_schema_boxes, output_schema_masks, output_schema
 
-    
-   
     def execute(self, execute_context: knext.ExecutionContext, input_table: knext.Table) -> knext.Table:
 
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
-
+        transform = transforms.Compose([transforms.ToTensor()])
+        
         # Determine and log device
-        device = "cuda" if self.device == "CUDA" and torch.cuda.is_available() else "cpu"
+        device = "cuda" if self.device == self.DeviceOptions.GPU.name and torch.cuda.is_available() else "cpu"
         LOGGER.info(f"Using device: {device}")
 
         # Load a pretrained YOLO model
-        model = YOLO(self.model_path)
+        model_path = self._resolve_model_path()
+        model = YOLO(model_path)
         model.to(device)
 
         df = input_table.to_pandas()
         
         # Initialize lists to collect results
-        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": [], "class": [], "confidence": []}
-        masks_data = {"img_id": [], "masks": [], "class": [], "confidence": []}
+        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": [], "class": [], "confidences": []}
+        masks_data = {"img_id": [], "masks": [], "class": [], "confidences": []}
 
         for idx in df.index:
-            img = df.at[idx,self.image_column]  # Get image path or data
-            img_tensor = transform(img).unsqueeze(0).to(device)
-            img_id = df.at[idx,self.image_id] # Use index as img_id (or replace with a column like row["id"])
+            img = df.at[idx, self.image_column]  # Get image path or data
+            img_id = df.at[idx, self.image_id]  # Use index as img_id (or replace with a column like row["id"])
 
             # Process image with YOLO model
             boxes, mask_images, img_res, confidences, class_names = self.process_image(model, img, device=device)
 
             if boxes is not None and len(boxes) > 0:
-                # Convert tensor to numpy if needed
+                 # Convert tensor to numpy if needed
                  for i, single_box in enumerate(boxes):  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
                     boxes_data["img_id"].append(img_id)
                     boxes_data["x_center"].append(single_box[0])  # Convert to list for schema
@@ -180,8 +211,7 @@ class KnimeYOLO:
                     boxes_data["width"].append(single_box[2])
                     boxes_data["height"].append(single_box[3])
                     boxes_data["class"].append(class_names[i] if i < len(class_names) else "unknown")
-                    boxes_data["confidence"].append(confidences[i] if i < len(confidences) else -1)
-
+                    boxes_data["confidences"].append(confidences[i] if i < len(confidences) else -1)
             
             if mask_images is not None and len(mask_images) > 0:
                 # Convert tensor to numpy if needed
@@ -189,37 +219,55 @@ class KnimeYOLO:
                     masks_data["img_id"].append(img_id)
                     masks_data["masks"].append(single_mask)  # Convert to list for schema
                     masks_data["class"].append(class_names[i] if i < len(class_names) else "unknown")
-                    masks_data["confidence"].append(confidences[i] if i < len(confidences) else -1)
+                    masks_data["confidences"].append(confidences[i] if i < len(confidences) else -1)
 
             # Append the processed image with mask to the DataFrame
             df.at[idx, "ImageMasked"] = img_res
-            
 
         # Create output DataFrames
         boxes_df = pd.DataFrame(boxes_data)
         masks_df = pd.DataFrame(masks_data)
         # df["ImageMasked"] = img_res
 
-        output_schema_boxes = knext.Table.from_pandas(boxes_df)
-        output_schema_masks = knext.Table.from_pandas(masks_df)
-        output_schema = knext.Table.from_pandas(df)
+        id_dtype = df[self.image_id].dtype
+
+        if boxes_df.empty:
+            boxes_df = pd.DataFrame(columns=["img_id", "x_center", "y_center", "width", "height", "class", "confidences"])
+            
+        boxes_df = boxes_df.astype({
+            "img_id": id_dtype,
+            "x_center": float,
+            "y_center": float,
+            "width": float,
+            "height": float,
+            "class": str,
+            "confidences": float
+        })
+
+        if masks_df.empty:
+            masks_df = pd.DataFrame(columns=["img_id", "masks", "class", "confidences"])
+            
+        masks_df = masks_df.astype({
+            "img_id": id_dtype,
+            "class": str,
+            "confidences": float
+        })
+        
+        if "ImageMasked" not in df.columns:
+            df["ImageMasked"] = pd.Series(dtype=object)
 
         # Convert to KNIME tables
-        return output_schema_boxes, output_schema_masks, output_schema
+        return knext.Table.from_pandas(boxes_df), knext.Table.from_pandas(masks_df), knext.Table.from_pandas(df)
 
-
-    
-    
     def process_image(self, model, img, device="cpu"):
         result = model.predict(img, device=0 if device == "cuda" else "cpu")  # Example: result could be a list or dict
 
         # Get bounding boxes coordinates
         try:
-            boxes = result[0].boxes.xywhn #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
-            boxes = boxes.numpy()
-        except:
-            LOGGER.info(f"Bounding boxes not available")
-            boxes = np.zeros((1, 4))  
+            boxes = result[0].boxes.xywhn.cpu().numpy() #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
+        except Exception as e:
+            LOGGER.warning(f"Bounding boxes not available: {e}")
+            boxes = np.zeros((1, 4))
 
         # Get segmentation mask 
         try:

@@ -16,7 +16,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Equalization",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/equalized.png",
+    icon_path="../icons/equalized.png",
     category=knimeVis_category,
     id="eq-image"
 )
@@ -118,6 +118,20 @@ class Equalization:
                     Y[i, j] = sk[im[i, j]]
             H = imhist(Y)
             return Y, h, H, sk
+        
+        def histeq_veloce(im):
+            # histogram of the image
+            hist, _ = np.histogram(im.flatten(), bins=256, range=(0, 256))
+            cdf = hist.cumsum()
+            cdf_normalized = cdf / cdf.max() # Normalization of the cumulative distribution function (CDF)
+            
+            # mapping function (transfer function)
+            sk = np.uint8(255 * cdf_normalized)
+            Y = sk[im] 
+            
+            # new histogram of the equalized image
+            new_hist, _ = np.histogram(Y.flatten(), bins=256, range=(0, 256))
+            return Y, hist / im.size, new_hist / Y.size, sk
 
         def process_images(image_paths):
             for image_path in image_paths:
@@ -126,9 +140,8 @@ class Equalization:
                     image = np.uint8(0.2126 * image[:, :, 0] +
                                     0.7152 * image[:, :, 1] +
                                     0.0722 * image[:, :, 2])
-
-                equalized_image, h, new_h, sk = histeq(image)
-
+                #equalized_image, h, new_h, sk = histeq(image)
+                equalized_image, h, new_h, sk = histeq_veloce(image)
                 Original_hist.append(h.tolist())
                 hist_equalize.append(new_h.tolist())
                 transfer_functions.append(sk.tolist())

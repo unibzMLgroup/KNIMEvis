@@ -17,7 +17,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Denoising",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/denoise.png",
+    icon_path="../icons/denoise.png",
     category=knimeVis_category,
     id="denoise-image",
 )
@@ -87,7 +87,7 @@ class Denoising:
 
         if self.filter_size % 2 == 0:
             raise ValueError("Filter size must be an odd integer.")
-        
+            
         # Return the updated schema
         output_schema = input_schema_1.append(
             [knext.Column(knext.logical(Image.Image), "Denoised Image")])
@@ -121,7 +121,7 @@ class Denoising:
             if self.algorithm_selection_param == self.AlgorithmOptions.MEDIAN.name:
                 # Use median_filter_opencv for MEDIAN option
                 return self.median_filter_opencv(image, self.filter_size)
-            elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN_openCV.name:
+            elif self.algorithm_selection_param == self.AlgorithmOptions.GAUSSIAN.name:
                 return self.gaussian_filter_opencv(image, self.filter_size)
             else:
                 raise ValueError(f"Unexpected algorithm: {self.algorithm_selection_param}")
