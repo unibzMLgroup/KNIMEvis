@@ -22,7 +22,7 @@ knimeVis_category = kutil.get_knimeVis_category ()
 @knext.node(
     name="Automatic Segmentation (SAM)",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="../icons/sam_icon.png",
+    icon_path="icons/sam_icon.png",
     category=knimeVis_category,
     id="seg-SAM1"
 )

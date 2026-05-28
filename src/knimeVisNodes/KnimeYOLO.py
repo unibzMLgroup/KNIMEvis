@@ -30,7 +30,7 @@ class ModelOptions(knext.EnumParameterOptions):
 @knext.node(
     name="YOLO",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="../icons/objdet.png",
+    icon_path="icons/objdet.png",
     category=knimeVis_category,
     id="segment-image",
 )

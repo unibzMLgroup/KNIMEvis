@@ -14,7 +14,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Image Loader",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="../icons/icon.png",
+    icon_path="icons/icon.png",
     category=knimeVis_category,
     id="dl-image",
 )

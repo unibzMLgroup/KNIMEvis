@@ -17,7 +17,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Denoising",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="../icons/denoise.png",
+    icon_path="icons/denoise.png",
     category=knimeVis_category,
     id="denoise-image",
 )

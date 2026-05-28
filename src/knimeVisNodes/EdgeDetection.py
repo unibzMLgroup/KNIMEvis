@@ -16,7 +16,7 @@ knimeVis_category = kutil.get_knimeVis_category()
 @knext.node(
     name="Edge Detection",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="../icons/filterIcon.png",
+    icon_path="icons/filterIcon.png",
     category=knimeVis_category,
     id="edgdet-image",
 )
