@@ -42,6 +42,12 @@ class ImageReader:
         column_filter=kutil.is_string,
         include_row_key=False,
     )
+
+    appended_column_name = knext.StringParameter(
+        label="Appended Column Name",
+        description="Name of the new column containing the loaded images.",
+        default_value="Image"
+    )
     
     def configure(
         self,
@@ -69,7 +75,7 @@ class ImageReader:
 
         # Return the updated schema
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "Image")])
+            [knext.Column(knext.logical(Image.Image), self.appended_column_name)])
 
         return output_schema
     
@@ -97,6 +103,6 @@ class ImageReader:
                
             return image
         
-        df["Image"] = [read_image(i) for i in images_path]
+        df[self.appended_column_name] = [read_image(i) for i in images_path]
 
         return knext.Table.from_pandas(df)

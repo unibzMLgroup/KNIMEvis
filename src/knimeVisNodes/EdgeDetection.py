@@ -32,12 +32,14 @@ knimeVis_category = kutil.get_knimeVis_category()
 
 class EdgeDetection:
     """
-    Edge detection Node
+    **Edge Detection Node**
 
-    The Spatial Filtering Node is a custom KNIME node designed to perfrom Edge detection. 
+    The Spatial Filtering Node is a custom KNIME node designed to perform edge detection. 
     
-    Edge detection involves identifying and locating sharp discontinuities in an image, which correspond to significant changes in intensity or color. 
-    These discontinuities are referred to as edges, essential for understanding the structure and content of an image.
+    Edge detection involves identifying and locating sharp discontinuities in an image, which correspond to significant changes in intensity or color. These discontinuities are referred to as edges, essential for understanding the structure and content of an image.
+
+    **How it works**
+    Applies mathematical convolution kernels to calculate gradient magnitudes or derivatives. It utilizes parallel processing (up to 16 concurrent threads) to ensure fast execution across large image datasets.
     """
 
     # define your parameter
@@ -49,11 +51,11 @@ class EdgeDetection:
     )
 
     threshold =  knext.IntParameter(
-        label="Threshold",
-        description="Threshold separates objects from the background in an image by setting a pixel intensity cutoff. Pixels above the threshold are typically classified as foreground (e.g., object or feature of interest), while those below are classified as background",
+        label="Threshold (3-255)",
+        description="A cutoff value to separate edges from the background. The filter operates on an 8-bit grayscale image, meaning intensity values range from 0 to 255. Gradients above this threshold value are marked as distinct edges (white), while those below are ignored as background (black).",
         default_value=30,
         min_value=3,
-        max_value=250,
+        max_value=255,
     )
 
     class AlgorithmOptions(knext.EnumParameterOptions):
@@ -68,6 +70,12 @@ class EdgeDetection:
         description="Select the algorithm to produce spatial filtering",
         default_value=AlgorithmOptions.SOBEL.name,
         enum=AlgorithmOptions)
+    
+    appended_column_name = knext.StringParameter(
+        label="Appended Column Name",
+        description="Name of the new column containing the edge-detected images.",
+        default_value="EdgeDetectedImage"
+    )
     
     def configure(
         self,
@@ -94,7 +102,7 @@ class EdgeDetection:
 
         # Return the updated schema
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "EdgeDetectedImage")])
+            [knext.Column(knext.logical(Image.Image), self.appended_column_name)])
 
         return output_schema
     
@@ -106,7 +114,7 @@ class EdgeDetection:
 
         # Parallel processing of images
         with ThreadPoolExecutor(max_workers=16) as executor:
-            df["EdgeDetectedImage"] = list(executor.map(self.process_image, images))
+            df[self.appended_column_name] = list(executor.map(self.process_image, images))
   
         return knext.Table.from_pandas(df)
     

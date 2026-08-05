@@ -64,6 +64,11 @@ class Denoising:
         min_value=3,
         max_value=15,
     )
+    appended_column_name = knext.StringParameter(
+        label="Appended Column Name",
+        description="Name of the new column containing the denoised images.",
+        default_value="Denoised Image"
+    )
     
     def configure(
         self,
@@ -90,7 +95,7 @@ class Denoising:
             
         # Return the updated schema
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "Denoised Image")])
+            [knext.Column(knext.logical(Image.Image), self.appended_column_name)])
 
         return output_schema
     
@@ -105,7 +110,7 @@ class Denoising:
         
         # Parallel processing of images
         with ThreadPoolExecutor(max_workers=16) as executor:
-            df["Denoised Image"] = list(executor.map(self.process_image, images))
+            df[self.appended_column_name] = list(executor.map(self.process_image, images))
 
         # Stop timing
         end_time = time.time()

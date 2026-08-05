@@ -1,7 +1,7 @@
 [workspace]
-authors = ["Giuseppe Di Fatta", "Andrea Rosani", "Thomas Borsani", "Raziyeh Tabatabaei", "Muhammad Ali Bhatti Hafiz"]
+authors = ["Giuseppe Di Fatta", "Andrea Rosani", "Thomas Borsani", "Raziyeh Tabatabaei", "Muhammad Ali Bhatti Hafiz", "Davide Valer"]
 channels = ["knime", "conda-forge"]
-name = "knimevizlab"
+name = "knimevislab"
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 version = "0.1.0"
 

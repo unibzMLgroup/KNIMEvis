@@ -57,3 +57,7 @@ Thumbs.db
 local-update-site# pixi environments
 .pixi/*
 !.pixi/config.toml
+
+# Model weights
+*.pt
+*.pth

@@ -32,13 +32,12 @@ knimeVis_category = kutil.get_knimeVis_category ()
 
 class SAMSegmentation:
     """    
-    SAM Automatic Image Segmentation
-    This node performs automatic image segmentation using the Segment Anything Model (SAM) without prompts. It accepts a table containing image, a path of the model, whcih can be downloaded from the following link https://github.com/facebookresearch/segment-anything?tab=readme-ov-file#model-checkpoints ,to process the images, a model type(sam_checkpoints),  and outputs a table with the segmentation results along with bounding boxes (xywh), stability scores, and predicted IoU.
+    This node performs automatic image segmentation using the Segment Anything Model (SAM) without prompts. It applies a dense grid of points across the input image and generates a segmentation mask for the object located at each point.
 
-    Tuneable parameters have been defined in the advanced settings of the configuration node to improve the automatically generated segmentation masks. 
-
+    **How it works**
+    It features built-in multithreading to accelerate CPU inference and supports CUDA-enabled GPUs for heavy workloads. 
+    Note: Users must download a SAM checkpoint file (e.g., `sam_vit_h_4b8939.pth`) locally to run this node. You can download the models from the [official Segment Anything repository](https://github.com/facebookresearch/segment-anything?tab=readme-ov-file#model-checkpoints).
     """
-    
     # Basic Parameters Section
     
     image_column = knext.ColumnParameter(
@@ -47,12 +46,10 @@ class SAMSegmentation:
         port_index=0,
         column_filter=kutil.is_png,
     )
-    Image_ID = knext.ColumnParameter(
-        label= "Image ID",
-        description= "Select the Image Path to identify image",
-        port_index=0,
-        column_filter = kutil.is_string
-
+    appended_column_name = knext.StringParameter(
+        label="Output Column Name",
+        description="Name of the column containing the segmented images in the first output port.",
+        default_value="Segmented Image"
     )
     model_path = knext.LocalPathParameter(
         label="Model file path",
@@ -65,11 +62,22 @@ class SAMSegmentation:
         default_value="vit_h",
         enum=["vit_h","vit_l","vit_b"]
     )
-    device = knext.StringParameter(
-        label="Device (GPU not available, falling back to CPU)",
-        description="Select the device to run the SAM model.",
-        default_value="CPU",
-        enum=["CPU", "GPU"]
+    #device = knext.StringParameter(
+    #    description="Select the device to run the SAM model.",
+    #    label="Device (GPU not available, falling back to CPU)",
+    #    default_value="CPU",
+    #    enum=["CPU", "GPU"]
+    #
+
+    class DeviceOptions(knext.EnumParameterOptions):
+        CPU = ("cpu", "Use CPU for inference")
+        GPU = ("gpu", "Use GPU for inference if CUDA is available")
+
+    device: str = knext.EnumParameter(
+        label="Computation Device",
+        description="Select the device for running model inference: CPU or GPU (CUDA).",
+        default_value=DeviceOptions.CPU.name,
+        enum=DeviceOptions
     )
 
     cpu_threads = knext.IntParameter(
@@ -172,11 +180,6 @@ class SAMSegmentation:
             raise ValueError("No image columns available for image paths or objects.")
         self.image_column = image_columns[-1][0] #select the last PNG column from the table
 
-        image_path = [(c.name, c.ktype) for c in input_schema_1 if kutil.is_string(c)]
-        if not image_path:
-            raise ValueError("No image columns available for image paths or objects.")
-        self.Image_ID = image_path[-1][0] #select the last PNG column from the table
-
         if not os.path.isfile(self.model_path):
             raise ValueError("Model file not found at the specified path.")
         
@@ -200,18 +203,15 @@ class SAMSegmentation:
                 f"Filename: {filename}"
             )
         
-        if self.Image_ID is None:
-            self.Image_ID = input_schema_1[0]   #select the Path by default at position 0
-        
         output_schema_1 = knext.Schema.from_columns([
-            knext.Column(knext.string(), "Path"),
-            knext.Column(knext.logical(Image.Image), "Segmented Image")
+            knext.Column(knext.string(), "Image ID"), # use the native RowID for identification
+            knext.Column(knext.logical(Image.Image), self.appended_column_name)
         ])
         
         output_schema_2 = knext.Schema.from_columns([
-            knext.Column(knext.string(), "Path"),
-            knext.Column(knext.int64(), "X_center"),
-            knext.Column(knext.int64(), "Y_center"),
+            knext.Column(knext.string(), "Image ID"), # use the native RowID for identification
+            knext.Column(knext.int64(), "X Center"),
+            knext.Column(knext.int64(), "Y Center"),
             knext.Column(knext.int64(), "Width"),
             knext.Column(knext.int64(), "Height"),
             knext.Column(knext.double(), "Predicted IoU"),
@@ -232,14 +232,22 @@ class SAMSegmentation:
         # Validate columns
         if self.image_column not in input_df.columns:
             raise ValueError(f"Image column '{self.image_column}' not found")
-        if self.Image_ID not in input_df.columns:
-            raise ValueError(f"ID column '{self.Image_ID}' not found")
 
         # Load SAM model
-        device = "cuda" if self.device == "GPU" and torch.cuda.is_available() else "cpu"
-        if self.device == "GPU" and device == "cpu":
-            exec_context.set_warning("GPU not available, using CPU")
+        #device = "cuda" if self.device == "GPU" and torch.cuda.is_available() else "cpu"
+        #if self.device == "GPU" and device == "cpu":
+        #    exec_context.set_warning("GPU not available, using CPU")
         
+        # Load SAM model
+        if self.device == "GPU":
+            if torch.cuda.is_available():
+                device = "cuda" # NVIDIA GPUs
+            else:
+                device = "cpu"
+                exec_context.set_warning("GPU not available, falling back to CPU")
+        else:
+            device = "cpu"
+
         try:
             sam = sam_model_registry[self.model_type](checkpoint=self.model_path)
             sam.to(device=device)
@@ -261,10 +269,25 @@ class SAMSegmentation:
         segmented_image_data = []
         segmentation_results = []
 
-        for idx in input_df.index:
+        # Get total number of rows for progress tracking
+        total_rows = len(input_df)
+
+        for i,idx in enumerate(input_df.index):
+            # Check for cancellation from user
+            if exec_context.is_canceled():
+                LOGGER.warning("Execution canceled by the user.")
+                break
+            
+            # Update progress
+            current_progress = i / total_rows
+            exec_context.set_progress(
+                current_progress, 
+                f"Processing image {i + 1} of {total_rows}... (this may take a while)"
+            )
+
             row = {col: input_df.at[idx, col] for col in input_df.columns}
             try:
-                path = str(row[self.Image_ID])
+                img_id = str(idx)
                 image = row[self.image_column]
                 
                 if not isinstance(image, Image.Image):
@@ -286,12 +309,12 @@ class SAMSegmentation:
                 
                 if masks:
                     vis_image = self._create_visualization(image_np, masks)
-                    segmented_image_data.append((path, vis_image))
+                    segmented_image_data.append((img_id, vis_image))
                     
                     for mask in masks:
                         x, y, w, h = mask['bbox']
                         segmentation_results.append([
-                            path,
+                            img_id,
                             int(x),
                             int(y),
                             int(w),
@@ -300,20 +323,30 @@ class SAMSegmentation:
                             float(mask['stability_score'])
                         ])
                 else:
-                    LOGGER.warning(f"No masks found for {path}")
-                    segmented_image_data.append((path, None))
+                    LOGGER.warning(f"No masks found for {img_id}")
+                    segmented_image_data.append((img_id, None))
                     
             except Exception as e:
-                LOGGER.error(f"Error processing {path}: {str(e)}")
-                segmented_image_data.append((path, None))
+                LOGGER.error(f"Error processing {img_id}: {str(e)}")
+                segmented_image_data.append((img_id, None))
+
+        # Final progress update
+        exec_context.set_progress(1.0, "Processing complete!")
+        
+        # check if no images were processed successfully
+        if len(segmentation_results) == 0 and total_rows > 0:
+            raise RuntimeError(
+                "SAM was unable to process any images on the GPU. "
+                "To resolve, open the node configuration and set the Device to 'CPU'."
+            )
 
         # Create output DataFrames
         segmented_image_df = pd.DataFrame(segmented_image_data, 
-                                        columns=["Path", "Segmented Image"])
+                                        columns=["Image ID", self.appended_column_name])
         
         segmentation_results_df = pd.DataFrame(
             segmentation_results if segmentation_results else [],
-            columns=["Path", "X_center", "Y_center", "Width", "Height", 
+            columns=["Image ID", "X Center", "Y Center", "Width", "Height", 
                     "Predicted IoU", "Stability Score"]
         )
 

@@ -1,10 +1,10 @@
 import knime.extension as knext
 
 main_category = knext.category(
-    path="/community/",
-    level_id="unibz",
-    name="UniBZ",
-    description="Category for Nodes by the unibz KNIME dev team",
+    path="/community",
+    level_id="image_processing",
+    name="Image Processing",
+    description="Community extension for image processing nodes",
     icon="icons/unibz_icon64.png",
 )
 

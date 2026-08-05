@@ -40,7 +40,11 @@ class Equalization:
         port_index=0,
         column_filter=kutil.is_png
     )
-
+    appended_column_name = knext.StringParameter(
+        label="Appended Column Name",
+        description="Name of the new column containing the equalized images in the first output port.",
+        default_value="Equalized Image"
+    )
 
     def configure(
             self,
@@ -67,7 +71,7 @@ class Equalization:
 
             # TODO setted for demo
             output_schema_1 = input_schema_1.append(
-                [knext.Column(knext.logical(Image.Image), "Equalized Image")])
+                [knext.Column(knext.logical(Image.Image), self.appended_column_name)])
             
             output_schema_2 = knext.Schema.from_columns([
                 
@@ -159,7 +163,7 @@ class Equalization:
             hist_equalized.append(json.dumps(eq_hist))
             transfer_functions_list.append(json.dumps(tf))
 
-        input_df["Equalized Image"] = equalized_images
+        input_df[self.appended_column_name] = equalized_images
         input_df2["Original Histogram"] = original_histograms
         input_df2["Histogram Equalized"] = hist_equalized
         input_df2["Transfer Function"] = transfer_functions_list
